@@ -3,23 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#121214">
+
 <title>Wallet — Carte Fedeltà</title>
-<meta name="description" content="Il tuo wallet digitale per le carte fedeltà.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<!-- Generazione QR / Barcode -->
+<!-- Generatore Barcode / QR -->
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@4.3.0/dist/bwip-js-min.js"></script>
 
-<!-- Scanner barcode da immagini -->
+<!-- Scanner Barcode -->
 <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.12.1/dist/quagga.js"></script>
 
-<!-- Secondo decoder -->
-<script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
+<!-- Decoder aggiuntivo -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/index.min.js"></script>
 
 <style>
+
 :root{
   --bg:#121214;
   --surface:#1c1c1f;
@@ -59,7 +61,8 @@
   -webkit-tap-highlight-color:transparent;
 }
 
-html,body{
+html,
+body{
   width:100%;
   height:100%;
   margin:0;
@@ -72,7 +75,9 @@ body{
   font-family:Inter,Arial,sans-serif;
 }
 
-button,input,select{
+button,
+input,
+select{
   font-family:inherit;
 }
 
@@ -123,12 +128,9 @@ button{
   font-weight:700;
 }
 
-h1,h2,h3{
-  font-family:Sora,sans-serif;
-}
-
 .topbar h1{
   margin:0;
+  font-family:Sora,sans-serif;
   font-size:25px;
 }
 
@@ -179,16 +181,16 @@ h1,h2,h3{
   transition:transform .16s ease;
 }
 
-.card:active{
-  transform:scale(.97);
-}
-
 .card:before{
   content:"";
   position:absolute;
   inset:0;
   background:linear-gradient(145deg,rgba(255,255,255,.18),transparent 45%);
   pointer-events:none;
+}
+
+.card:active{
+  transform:scale(.97);
 }
 
 .card-top{
@@ -278,11 +280,13 @@ h1,h2,h3{
   align-items:center;
   justify-content:center;
   margin:auto auto 18px;
+  font-size:30px;
 }
 
 .empty h3{
   margin:0 0 7px;
   color:var(--text);
+  font-family:Sora,sans-serif;
 }
 
 .empty p{
@@ -418,8 +422,7 @@ h1,h2,h3{
   color:var(--muted);
 }
 
-.field input,
-.field select{
+.field input{
   width:100%;
   border:1px solid var(--line);
   border-radius:14px;
@@ -430,8 +433,7 @@ h1,h2,h3{
   outline:none;
 }
 
-.field input:focus,
-.field select:focus{
+.field input:focus{
   border-color:var(--accent);
 }
 
@@ -509,7 +511,9 @@ h1,h2,h3{
   cursor:default;
 }
 
-/* SCANNER */
+/* ================================
+   SCANNER
+================================ */
 
 .scanner{
   padding:0 16px 30px;
@@ -649,7 +653,40 @@ h1,h2,h3{
   margin-top:15px;
 }
 
-/* DETAIL */
+/* ================================
+   AUTO TYPE
+================================ */
+
+.auto-type-box{
+  background:var(--surface2);
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:16px;
+}
+
+.auto-type-title{
+  font-size:11px;
+  color:var(--faint);
+  text-transform:uppercase;
+  font-weight:800;
+  margin-bottom:5px;
+}
+
+.auto-type-value{
+  font-family:Sora,sans-serif;
+  font-size:16px;
+  font-weight:800;
+}
+
+.auto-type-note{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:5px;
+}
+
+/* ================================
+   DETAIL
+================================ */
 
 .detail-body{
   flex:1;
@@ -681,6 +718,7 @@ h1,h2,h3{
 .hero h2{
   margin:0;
   font-size:19px;
+  font-family:Sora,sans-serif;
 }
 
 .hero p{
@@ -723,7 +761,9 @@ h1,h2,h3{
   text-transform:uppercase;
 }
 
-/* SETTINGS */
+/* ================================
+   SETTINGS
+================================ */
 
 .settings{
   padding:0 16px 40px;
@@ -785,6 +825,10 @@ h1,h2,h3{
   line-height:1.5;
 }
 
+/* ================================
+   SHEETS
+================================ */
+
 .sheet-backdrop{
   position:absolute;
   inset:0;
@@ -829,6 +873,7 @@ h1,h2,h3{
 
 .sheet h3{
   margin:0 0 6px;
+  font-family:Sora,sans-serif;
 }
 
 .sheet p{
@@ -840,6 +885,7 @@ h1,h2,h3{
 .sheet-buttons{
   display:flex;
   gap:10px;
+  margin-top:18px;
 }
 
 .sheet-buttons>*{
@@ -873,6 +919,7 @@ h1,h2,h3{
 .hidden{
   display:none!important;
 }
+
 </style>
 </head>
 
@@ -880,71 +927,126 @@ h1,h2,h3{
 
 <div id="app">
 
-<!-- HOME -->
+<!-- =========================================
+     HOME
+========================================= -->
+
 <section class="screen active" id="screen-home">
 
   <div class="topbar">
+
     <div>
       <p class="eyebrow">Wallet</p>
       <h1>Le tue carte</h1>
     </div>
 
     <button class="icon-btn" onclick="goTo('settings')">
+
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.07a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.07a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.6.02 1.1.4 1.4.93"/>
       </svg>
+
     </button>
+
   </div>
 
   <div class="scroll" id="home-content"></div>
 
 </section>
 
-<!-- ADD -->
+
+<!-- =========================================
+     ADD
+========================================= -->
+
 <section class="screen" id="screen-add">
 
   <div class="topbar">
+
     <div>
+
       <p class="eyebrow">Wallet</p>
-      <h1 id="add-title">Aggiungi carta</h1>
+
+      <h1 id="add-title">
+        Aggiungi carta
+      </h1>
+
     </div>
 
-    <button class="icon-btn" onclick="goTo('home')">
+    <button
+      class="icon-btn"
+      onclick="goTo('home')">
+
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M18 6L6 18M6 6l12 12"/>
       </svg>
+
     </button>
+
   </div>
+
 
   <div class="segmented">
-    <button id="tab-scan" class="active" onclick="setAddMode('scan')">
+
+    <button
+      id="tab-scan"
+      class="active"
+      onclick="setAddMode('scan')">
+
       📷 Scansiona
+
     </button>
 
-    <button id="tab-manual" onclick="setAddMode('manual')">
+    <button
+      id="tab-manual"
+      onclick="setAddMode('manual')">
+
       ✎ Manuale
+
     </button>
+
   </div>
+
 
   <div class="scroll">
 
-    <!-- SCANNER -->
-    <div id="scanner-panel" class="scanner">
+    <!-- ===============================
+         SCANNER
+    ================================ -->
 
-      <div class="camera" id="camera-box">
+    <div
+      id="scanner-panel"
+      class="scanner">
 
-        <video id="camera-video" autoplay muted playsinline></video>
+      <div
+        class="camera"
+        id="camera-box">
 
-        <img id="captured-image" alt="Foto acquisita">
+        <video
+          id="camera-video"
+          autoplay
+          muted
+          playsinline>
+        </video>
+
+        <img
+          id="captured-image"
+          alt="Foto acquisita">
 
         <div class="scan-box"></div>
 
       </div>
 
-      <div class="camera-status" id="camera-status">
+
+      <div
+        class="camera-status"
+        id="camera-status">
+
         Inquadra la carta e scatta una foto
+
       </div>
+
 
       <div class="camera-buttons">
 
@@ -952,79 +1054,167 @@ h1,h2,h3{
           class="camera-button"
           id="take-photo"
           onclick="takePhoto()">
+
           📸 Scatta foto
+
         </button>
 
         <button
           class="camera-button secondary hidden"
           id="retry-photo"
           onclick="retryPhoto()">
+
           ↻ Riprova
+
         </button>
 
       </div>
 
-      <div id="scan-help" class="scan-help">
-        Metti il codice a barre della carta
-        il più possibile nitido e visibile.
-        Non è necessario centrarlo perfettamente:
-        l'app analizzerà tutta la foto.
+
+      <div
+        id="scan-help"
+        class="scan-help">
+
+        Metti il codice della carta il più possibile
+        nitido e visibile. L'app analizzerà
+        automaticamente tutta la foto e proverà
+        a riconoscere anche il tipo di codice.
+
       </div>
+
 
       <div id="scan-result"></div>
 
     </div>
 
-    <!-- MANUALE -->
-    <div id="manual-panel" class="form hidden">
+
+    <!-- ===============================
+         MANUALE
+    ================================ -->
+
+    <div
+      id="manual-panel"
+      class="form hidden">
 
       <div class="preview">
-        <div class="preview-title">Anteprima</div>
+
+        <div class="preview-title">
+          Anteprima
+        </div>
+
         <div id="manual-preview"></div>
+
       </div>
+
 
       <div class="field">
-        <label>Nome carta</label>
-        <input id="card-name" type="text" placeholder="Es. Carta Fidaty">
+
+        <label>
+          Nome carta
+        </label>
+
+        <input
+          id="card-name"
+          type="text"
+          placeholder="Es. Carta Fidaty">
+
       </div>
+
 
       <div class="field">
-        <label>Negozio</label>
-        <input id="store-name" type="text" placeholder="Es. Esselunga">
+
+        <label>
+          Negozio
+        </label>
+
+        <input
+          id="store-name"
+          type="text"
+          placeholder="Es. Esselunga">
+
       </div>
+
+
+      <!--
+        IMPORTANTE:
+        L'utente NON deve scegliere il tipo.
+        Lo determiniamo automaticamente.
+      -->
+
+      <div
+        class="auto-type-box">
+
+        <div class="auto-type-title">
+          Tipo codice
+        </div>
+
+        <div
+          class="auto-type-value"
+          id="auto-type-value">
+
+          Automatico
+
+        </div>
+
+        <div
+          class="auto-type-note">
+
+          Il tipo viene determinato automaticamente
+          dal codice inserito.
+
+        </div>
+
+      </div>
+
 
       <div class="field">
-        <label>Tipo codice</label>
-        <select id="code-type" onchange="updatePreview()">
-          <option value="ean13">EAN-13</option>
-          <option value="ean8">EAN-8</option>
-          <option value="code128">Code 128</option>
-          <option value="code39">Code 39</option>
-          <option value="upca">UPC-A</option>
-          <option value="upce">UPC-E</option>
-          <option value="qrcode">QR Code</option>
-          <option value="datamatrix">Data Matrix</option>
-          <option value="pdf417">PDF417</option>
-        </select>
+
+        <label>
+          Codice
+        </label>
+
+        <input
+          id="card-code"
+          type="text"
+          placeholder="Inserisci il codice">
+
       </div>
+
 
       <div class="field">
-        <label>Codice</label>
-        <input id="card-code" type="text" placeholder="Inserisci il codice">
+
+        <label>
+          Colore
+        </label>
+
+        <div
+          class="colors"
+          id="colors">
+        </div>
+
       </div>
+
 
       <div class="field">
-        <label>Colore</label>
-        <div class="colors" id="colors"></div>
+
+        <label>
+          Icona
+        </label>
+
+        <div
+          class="emojis"
+          id="emojis">
+        </div>
+
       </div>
 
-      <div class="field">
-        <label>Icona</label>
-        <div class="emojis" id="emojis"></div>
-      </div>
 
-      <button class="btn primary" onclick="saveCard()">
+      <button
+        class="btn primary"
+        onclick="saveCard()">
+
         Salva carta
+
       </button>
 
     </div>
@@ -1033,105 +1223,213 @@ h1,h2,h3{
 
 </section>
 
-<!-- DETAIL -->
-<section class="screen" id="screen-detail">
+
+<!-- =========================================
+     DETAIL
+========================================= -->
+
+<section
+  class="screen"
+  id="screen-detail">
 
   <div class="topbar">
 
-    <button class="icon-btn" onclick="goTo('home')">
+    <button
+      class="icon-btn"
+      onclick="goTo('home')">
+
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M15 18l-6-6 6-6"/>
       </svg>
+
     </button>
 
-    <button class="icon-btn" onclick="openDetailMenu()">
+
+    <button
+      class="icon-btn"
+      onclick="openDetailMenu()">
+
       ⋯
+
     </button>
 
   </div>
 
-  <div class="detail-body" id="detail-content"></div>
+
+  <div
+    class="detail-body"
+    id="detail-content">
+  </div>
 
 </section>
 
-<!-- SETTINGS -->
-<section class="screen" id="screen-settings">
+
+<!-- =========================================
+     SETTINGS
+========================================= -->
+
+<section
+  class="screen"
+  id="screen-settings">
 
   <div class="topbar">
 
     <div>
-      <p class="eyebrow">Wallet</p>
-      <h1>Impostazioni</h1>
+
+      <p class="eyebrow">
+        Wallet
+      </p>
+
+      <h1>
+        Impostazioni
+      </h1>
+
     </div>
 
-    <button class="icon-btn" onclick="goTo('home')">
+
+    <button
+      class="icon-btn"
+      onclick="goTo('home')">
+
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M18 6L6 18M6 6l12 12"/>
       </svg>
+
     </button>
 
   </div>
+
 
   <div class="scroll">
 
     <div class="settings">
 
-      <div class="setting-title">Aspetto</div>
-
-      <div class="setting-card">
-
-        <div class="setting-row">
-
-          <div>
-            <div class="setting-name">Tema</div>
-            <div class="setting-sub">Scegli l'aspetto dell'app</div>
-          </div>
-
-          <div>
-            <button onclick="setTheme('dark')">Scuro</button>
-            <button onclick="setTheme('light')">Chiaro</button>
-            <button onclick="setTheme('auto')">Auto</button>
-          </div>
-
-        </div>
-
+      <div class="setting-title">
+        Aspetto
       </div>
 
-      <div class="setting-title">Dati</div>
 
       <div class="setting-card">
 
         <div class="setting-row">
-          <div>
-            <div class="setting-name">Esporta carte</div>
-            <div class="setting-sub">Salva un backup JSON</div>
-          </div>
-          <button onclick="exportCards()">Esporta</button>
-        </div>
 
-        <div class="setting-row">
           <div>
-            <div class="setting-name">Importa carte</div>
-            <div class="setting-sub">Ripristina un backup</div>
-          </div>
-          <button onclick="document.getElementById('import-file').click()">Importa</button>
-        </div>
 
-        <div class="setting-row">
-          <div>
-            <div class="setting-name" style="color:var(--danger)">
-              Elimina tutte
+            <div class="setting-name">
+              Tema
             </div>
+
             <div class="setting-sub">
-              Cancella tutte le carte dal dispositivo
+              Scegli l'aspetto dell'app
             </div>
+
           </div>
-          <button onclick="deleteAllCards()" style="color:var(--danger)">
-            Elimina
-          </button>
+
+
+          <div>
+
+            <button onclick="setTheme('dark')">
+              Scuro
+            </button>
+
+            <button onclick="setTheme('light')">
+              Chiaro
+            </button>
+
+            <button onclick="setTheme('auto')">
+              Auto
+            </button>
+
+          </div>
+
         </div>
 
       </div>
+
+
+      <div class="setting-title">
+        Dati
+      </div>
+
+
+      <div class="setting-card">
+
+        <div class="setting-row">
+
+          <div>
+
+            <div class="setting-name">
+              Esporta carte
+            </div>
+
+            <div class="setting-sub">
+              Salva un backup JSON
+            </div>
+
+          </div>
+
+          <button onclick="exportCards()">
+            Esporta
+          </button>
+
+        </div>
+
+
+        <div class="setting-row">
+
+          <div>
+
+            <div class="setting-name">
+              Importa carte
+            </div>
+
+            <div class="setting-sub">
+              Ripristina un backup
+            </div>
+
+          </div>
+
+          <button
+            onclick="document.getElementById('import-file').click()">
+
+            Importa
+
+          </button>
+
+        </div>
+
+
+        <div class="setting-row">
+
+          <div>
+
+            <div
+              class="setting-name"
+              style="color:var(--danger)">
+
+              Elimina tutte
+
+            </div>
+
+            <div class="setting-sub">
+              Cancella tutte le carte
+              dal dispositivo
+            </div>
+
+          </div>
+
+          <button
+            onclick="deleteAllCards()"
+            style="color:var(--danger)">
+
+            Elimina
+
+          </button>
+
+        </div>
+
+      </div>
+
 
       <input
         id="import-file"
@@ -1140,12 +1438,15 @@ h1,h2,h3{
         class="hidden"
         onchange="importCards(event)">
 
+
       <div class="privacy">
+
         🔒 <strong>Privacy</strong><br>
+
         Tutte le tue carte vengono salvate
         esclusivamente nel localStorage del dispositivo.
-        Nessun account, nessun database e nessun server
-        riceve i codici delle tue carte.
+        Nessun account e nessun database sono necessari.
+
       </div>
 
     </div>
@@ -1154,53 +1455,98 @@ h1,h2,h3{
 
 </section>
 
-<!-- NAV -->
+
+<!-- =========================================
+     NAV
+========================================= -->
+
 <div class="bottom">
 
   <div class="nav">
 
-    <button id="nav-home" class="active" onclick="goTo('home')">
+    <button
+      id="nav-home"
+      class="active"
+      onclick="goTo('home')">
+
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <path d="M3 10.5L12 3l9 7.5"/>
         <path d="M5 9.5V20h5v-6h4v6h5V9.5"/>
       </svg>
-      <span>Home</span>
+
+      <span>
+        Home
+      </span>
+
     </button>
 
+
     <button onclick="fabAdd()">
-      <div class="fab" id="fab">
+
+      <div
+        class="fab"
+        id="fab">
+
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
           <path d="M12 5v14M5 12h14"/>
         </svg>
+
       </div>
+
     </button>
 
-    <button id="nav-settings" onclick="goTo('settings')">
+
+    <button
+      id="nav-settings"
+      onclick="goTo('settings')">
+
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.07a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.07a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04.04A1.7 1.7 0 0 0 19.4 9c.6.02 1.1.4 1.4.93"/>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.04.04a2 2 0 1 1-2.83 2.83l-.04-.04a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.04.04a2 2 0 1 1-2.83-2.83l.04-.04A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.07a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.88l-.04-.04a2 2 0 1 1 2.83-2.83l.04.04A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.07a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.88-.34l.04-.04a2 2 0 1 1 2.83 2.83l-.04-.04A1.7 1.7 0 0 0 19.4 9c.6.02 1.1.4 1.4.93"/>
       </svg>
-      <span>Impostazioni</span>
+
+      <span>
+        Impostazioni
+      </span>
+
     </button>
 
   </div>
 
 </div>
 
-<!-- BACKDROP -->
-<div class="sheet-backdrop" id="backdrop" onclick="closeAllSheets()"></div>
 
-<!-- CONFIRM SCAN -->
-<div class="sheet" id="scan-sheet">
+<!-- =========================================
+     BACKDROP
+========================================= -->
+
+<div
+  class="sheet-backdrop"
+  id="backdrop"
+  onclick="closeAllSheets()">
+</div>
+
+
+<!-- =========================================
+     SCAN CONFIRM
+========================================= -->
+
+<div
+  class="sheet"
+  id="scan-sheet">
 
   <div class="handle"></div>
 
-  <h3>Codice rilevato ✓</h3>
+  <h3>
+    Codice riconosciuto ✓
+  </h3>
 
   <p>
-    Controlla che il numero rilevato dalla foto
-    sia corretto.
+    Controlla il numero rilevato dalla foto.
+    Abbiamo anche provato a riconoscere
+    automaticamente il tipo di codice.
   </p>
+
 
   <div class="result">
 
@@ -1208,19 +1554,32 @@ h1,h2,h3{
       Codice trovato
     </div>
 
-    <div class="result-code" id="confirm-code">
+    <div
+      class="result-code"
+      id="confirm-code">
+
       —
+
     </div>
 
-    <div class="result-type" id="confirm-type">
+    <div
+      class="result-type"
+      id="confirm-type">
+
       —
+
     </div>
 
   </div>
 
-  <div class="field" style="margin-top:15px">
 
-    <label>Modifica se necessario</label>
+  <div
+    class="field"
+    style="margin-top:15px">
+
+    <label>
+      Modifica il numero se necessario
+    </label>
 
     <input
       id="confirm-code-input"
@@ -1228,79 +1587,135 @@ h1,h2,h3{
 
   </div>
 
+
   <div class="sheet-buttons">
 
     <button
       class="btn secondary"
       onclick="closeScanSheet()">
+
       Annulla
+
     </button>
+
 
     <button
       class="btn primary"
       onclick="confirmScannedCode()">
+
       Conferma
+
     </button>
 
   </div>
 
 </div>
 
-<!-- DETAIL MENU -->
-<div class="sheet" id="detail-sheet">
+
+<!-- =========================================
+     DETAIL MENU
+========================================= -->
+
+<div
+  class="sheet"
+  id="detail-sheet">
 
   <div class="handle"></div>
 
-  <h3>Gestisci carta</h3>
+  <h3>
+    Gestisci carta
+  </h3>
 
-  <div class="sheet-buttons" style="margin-top:18px">
 
-    <button class="btn secondary" onclick="editCurrentCard()">
+  <div class="sheet-buttons">
+
+    <button
+      class="btn secondary"
+      onclick="editCurrentCard()">
+
       Modifica
+
     </button>
+
 
     <button
       class="btn"
       onclick="deleteCurrentCard()"
       style="background:var(--danger);color:#fff">
+
       Elimina
+
     </button>
 
   </div>
 
 </div>
 
-<div class="toast" id="toast"></div>
+
+<div
+  class="toast"
+  id="toast">
+</div>
 
 </div>
 
+
 <script>
+
 "use strict";
 
+
 /* ============================================================
-   DATI
-   ============================================================ */
+   STORAGE
+============================================================ */
 
-const STORAGE_KEY = "cardwallet_cards_v3";
-const SETTINGS_KEY = "cardwallet_settings_v3";
+const STORAGE_KEY =
+  "cardwallet_cards_v4";
 
-let cards = loadCards();
+const SETTINGS_KEY =
+  "cardwallet_settings_v4";
 
-let currentScreen = "home";
-let currentDetailId = null;
-let editingId = null;
 
-let addMode = "scan";
+let cards =
+  loadCards();
 
-let selectedColor = ["#2f6fed","#1d4fb8"];
-let selectedEmoji = "💳";
+let currentScreen =
+  "home";
 
-let cameraStream = null;
-let capturedCanvas = null;
-let scanResult = null;
-let scanning = false;
+let currentDetailId =
+  null;
+
+let editingId =
+  null;
+
+let addMode =
+  "scan";
+
+let selectedColor =
+  ["#2f6fed","#1d4fb8"];
+
+let selectedEmoji =
+  "💳";
+
+let cameraStream =
+  null;
+
+let capturedCanvas =
+  null;
+
+let scanResult =
+  null;
+
+let scanning =
+  false;
+
+
+/* ============================================================
+   COLORI / EMOJI
+============================================================ */
 
 const colors = [
+
   ["#2e7d46","#1c5c30"],
   ["#e0364f","#a8203a"],
   ["#2f6fed","#1d4fb8"],
@@ -1311,14 +1726,38 @@ const colors = [
   ["#e07a2f","#b05a1c"],
   ["#2ba89a","#1c7d72"],
   ["#8a8f98","#5c6067"]
+
 ];
+
 
 const emojis = [
-  "💳","🛍️","🏬","🏋️","🍕","☕","🎬","💊",
-  "🚗","✈️","🐾","🎮","👟","💇","🧾","⭐"
+
+  "💳",
+  "🛍️",
+  "🏬",
+  "🏋️",
+  "🍕",
+  "☕",
+  "🎬",
+  "💊",
+  "🚗",
+  "✈️",
+  "🐾",
+  "🎮",
+  "👟",
+  "💇",
+  "🧾",
+  "⭐"
+
 ];
 
+
+/* ============================================================
+   NOMI FORMATI
+============================================================ */
+
 const labels = {
+
   ean13:"EAN-13",
   ean8:"EAN-8",
   code128:"Code 128",
@@ -1328,9 +1767,16 @@ const labels = {
   qrcode:"QR Code",
   datamatrix:"Data Matrix",
   pdf417:"PDF417"
+
 };
 
+
+/* ============================================================
+   BWIP
+============================================================ */
+
 const bwipMap = {
+
   ean13:"ean13",
   ean8:"ean8",
   code128:"code128",
@@ -1340,36 +1786,89 @@ const bwipMap = {
   qrcode:"qrcode",
   datamatrix:"datamatrix",
   pdf417:"pdf417"
+
 };
+
 
 /* ============================================================
    STORAGE
-   ============================================================ */
+============================================================ */
 
 function loadCards(){
 
   try{
 
     const value =
-      localStorage.getItem(STORAGE_KEY);
+      localStorage.getItem(
+        STORAGE_KEY
+      );
 
-    if(!value) return [];
+    if(!value){
+
+      /*
+       * Compatibilità con la
+       * versione precedente.
+       */
+
+      const old =
+        localStorage.getItem(
+          "cardwallet_cards_v3"
+        );
+
+      if(old){
+
+        const parsedOld =
+          JSON.parse(old);
+
+        if(Array.isArray(parsedOld)){
+
+          return parsedOld.map(card=>({
+
+            ...card,
+
+            codeType:
+              card.codeType ||
+              inferCodeType(
+                card.code
+              )
+
+          }));
+
+        }
+
+      }
+
+      return [];
+
+    }
 
     const parsed =
       JSON.parse(value);
 
     return Array.isArray(parsed)
-      ? parsed
+      ? parsed.map(card=>({
+
+          ...card,
+
+          codeType:
+            card.codeType ||
+            inferCodeType(
+              card.code
+            )
+
+        }))
       : [];
 
   }catch(error){
 
     console.error(error);
+
     return [];
 
   }
 
 }
+
 
 function saveCards(){
 
@@ -1392,29 +1891,36 @@ function saveCards(){
 
 }
 
+
 /* ============================================================
-   UTILS
-   ============================================================ */
+   UTILITÀ
+============================================================ */
 
 function uid(){
 
-  return Date.now().toString(36)
-    + Math.random()
+  return Date.now()
+    .toString(36)
+    +
+    Math.random()
       .toString(36)
       .substring(2,8);
 
 }
 
+
 function esc(value){
 
-  return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+  return String(
+    value ?? ""
+  )
+  .replace(/&/g,"&amp;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;")
+  .replace(/'/g,"&#039;");
 
 }
+
 
 function gradient(card){
 
@@ -1428,15 +1934,20 @@ function gradient(card){
 
 }
 
+
 function toast(message){
 
   const el =
-    document.getElementById("toast");
+    document.getElementById(
+      "toast"
+    );
 
   el.textContent =
     message;
 
-  el.classList.add("show");
+  el.classList.add(
+    "show"
+  );
 
   clearTimeout(
     toast.timer
@@ -1445,103 +1956,348 @@ function toast(message){
   toast.timer =
     setTimeout(
       ()=>{
-        el.classList.remove("show");
+        el.classList.remove(
+          "show"
+        );
       },
       2500
     );
 
 }
 
+
+/* ============================================================
+   RICONOSCIMENTO AUTOMATICO DEL TIPO
+============================================================ */
+
+/*
+ * Questa funzione viene usata quando
+ * abbiamo soltanto il numero.
+ *
+ * ATTENZIONE:
+ * dal solo contenuto non sempre è possibile
+ * distinguere con certezza due standard.
+ *
+ * Per questo la scansione fotografica
+ * rimane la fonte principale del tipo.
+ */
+
+function inferCodeType(value){
+
+  if(!value){
+
+    return "code128";
+
+  }
+
+  let code =
+    String(value)
+      .trim()
+      .replace(/\s+/g,"");
+
+  /*
+   * QR / testo generico:
+   * non possiamo riconoscerlo dal numero
+   * perché il contenuto non contiene
+   * l'informazione sul formato.
+   */
+
+  if(
+    /^\d+$/.test(code)
+  ){
+
+    if(
+      code.length === 13 &&
+      validEAN13(code)
+    ){
+
+      return "ean13";
+
+    }
+
+    if(
+      code.length === 8 &&
+      validEAN8(code)
+    ){
+
+      return "ean8";
+
+    }
+
+    if(
+      code.length === 12
+    ){
+
+      return "upca";
+
+    }
+
+    if(
+      code.length === 6
+    ){
+
+      return "upce";
+
+    }
+
+    /*
+     * Se è numerico ma non corrisponde
+     * a uno standard verificabile,
+     * Code 128 è una scelta più generale.
+     */
+
+    return "code128";
+
+  }
+
+
+  /*
+   * Se contiene lettere e numeri,
+   * proviamo Code 39.
+   */
+
+  if(
+    /^[0-9A-Z\-\.\ \$\/\+\%]+$/.test(
+      code
+    )
+  ){
+
+    return "code39";
+
+  }
+
+
+  /*
+   * Default:
+   * Code 128 supporta moltissimi caratteri.
+   */
+
+  return "code128";
+
+}
+
+
+/* ============================================================
+   CHECK DIGIT EAN
+============================================================ */
+
+function validEAN13(code){
+
+  if(!/^\d{13}$/.test(code)){
+
+    return false;
+
+  }
+
+  let sum = 0;
+
+  for(
+    let i=0;
+    i<12;
+    i++
+  ){
+
+    const n =
+      Number(code[i]);
+
+    sum +=
+      i % 2 === 0
+        ? n
+        : n * 3;
+
+  }
+
+  const check =
+    (10 - (sum % 10)) % 10;
+
+  return (
+    check ===
+    Number(code[12])
+  );
+
+}
+
+
+function validEAN8(code){
+
+  if(!/^\d{8}$/.test(code)){
+
+    return false;
+
+  }
+
+  let sum = 0;
+
+  for(
+    let i=0;
+    i<7;
+    i++
+  ){
+
+    const n =
+      Number(code[i]);
+
+    sum +=
+      i % 2 === 0
+        ? n * 3
+        : n;
+
+  }
+
+  const check =
+    (10 - (sum % 10)) % 10;
+
+  return (
+    check ===
+    Number(code[7])
+  );
+
+}
+
+
 /* ============================================================
    NAVIGAZIONE
-   ============================================================ */
+============================================================ */
 
 function goTo(screen){
 
   stopCamera();
 
   document
-    .querySelectorAll(".screen")
-    .forEach(el=>{
-      el.classList.remove("active");
-    });
+    .querySelectorAll(
+      ".screen"
+    )
+    .forEach(
+      el=>{
+        el.classList.remove(
+          "active"
+        );
+      }
+    );
 
   document
     .getElementById(
       "screen-" + screen
     )
-    .classList.add("active");
+    .classList.add(
+      "active"
+    );
 
   currentScreen =
     screen;
 
+
   document
-    .getElementById("nav-home")
+    .getElementById(
+      "nav-home"
+    )
     .classList.toggle(
       "active",
       screen === "home"
     );
 
+
   document
-    .getElementById("nav-settings")
+    .getElementById(
+      "nav-settings"
+    )
     .classList.toggle(
       "active",
       screen === "settings"
     );
 
+
   document
-    .querySelector(".bottom")
+    .querySelector(
+      ".bottom"
+    )
     .style.display =
       screen === "detail"
         ? "none"
         : "block";
 
-  if(screen === "home"){
+
+  if(
+    screen === "home"
+  ){
+
     renderHome();
+
   }
 
-  if(screen === "add"){
+
+  if(
+    screen === "add"
+  ){
+
     prepareAdd();
-    if(addMode === "scan"){
+
+    if(
+      addMode === "scan"
+    ){
+
       startCamera();
+
     }
+
   }
 
-  if(screen === "settings"){
+
+  if(
+    screen === "settings"
+  ){
+
     applyTheme();
+
   }
 
 }
 
+
 function fabAdd(){
 
   const fab =
-    document.getElementById("fab");
+    document.getElementById(
+      "fab"
+    );
 
-  fab.classList.remove("clicked");
+  fab.classList.remove(
+    "clicked"
+  );
 
   void fab.offsetWidth;
 
-  fab.classList.add("clicked");
+  fab.classList.add(
+    "clicked"
+  );
 
-  if(navigator.vibrate){
+  if(
+    navigator.vibrate
+  ){
 
     try{
-      navigator.vibrate(12);
+
+      navigator.vibrate(
+        12
+      );
+
     }catch(e){}
 
   }
 
   setTimeout(
-    ()=>goTo("add"),
+    ()=>{
+      goTo("add");
+    },
     150
   );
 
 }
 
+
 /* ============================================================
    HOME
-   ============================================================ */
+============================================================ */
 
 function renderHome(){
 
@@ -1550,7 +2306,10 @@ function renderHome(){
       "home-content"
     );
 
-  if(cards.length === 0){
+
+  if(
+    cards.length === 0
+  ){
 
     root.innerHTML = `
 
@@ -1572,7 +2331,9 @@ function renderHome(){
         <button
           class="add-home"
           onclick="goTo('add')">
+
           ＋ Aggiungi carta
+
         </button>
 
       </div>
@@ -1583,117 +2344,166 @@ function renderHome(){
 
   }
 
+
   root.innerHTML = `
-    <div class="cards" id="card-list"></div>
+
+    <div
+      class="cards"
+      id="card-list">
+    </div>
 
     <button
       class="add-home"
       onclick="goTo('add')">
+
       ＋ Aggiungi carta
+
     </button>
+
   `;
+
 
   const list =
     document.getElementById(
       "card-list"
     );
 
-  cards.forEach(card=>{
 
-    const el =
-      document.createElement("div");
+  cards.forEach(
+    card=>{
 
-    el.className =
-      "card";
+      const el =
+        document.createElement(
+          "div"
+        );
 
-    el.style.background =
-      gradient(card);
+      el.className =
+        "card";
 
-    el.innerHTML = `
+      el.style.background =
+        gradient(card);
 
-      <div class="card-top">
 
-        <div class="brand">
+      el.innerHTML = `
 
-          <div class="logo">
-            ${esc(card.emoji)}
+        <div class="card-top">
+
+          <div class="brand">
+
+            <div class="logo">
+              ${esc(card.emoji)}
+            </div>
+
+            <div>
+
+              <div class="card-name">
+                ${esc(card.name)}
+              </div>
+
+              <div class="store">
+                ${esc(card.store)}
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="type">
+
+            ${esc(
+              labels[
+                card.codeType
+              ] ||
+              "Automatico"
+            )}
+
+          </div>
+
+        </div>
+
+
+        <div class="dash"></div>
+
+
+        <div class="card-bottom">
+
+          <div class="code-preview">
+            •••• ${esc(
+              String(
+                card.code
+              ).slice(-6)
+            )}
           </div>
 
           <div>
-
-            <div class="card-name">
-              ${esc(card.name)}
-            </div>
-
-            <div class="store">
-              ${esc(card.store)}
-            </div>
-
+            ›
           </div>
 
         </div>
 
-        <div class="type">
-          ${esc(
-            labels[card.codeType]
-            || card.codeType
-          )}
-        </div>
+      `;
 
-      </div>
 
-      <div class="dash"></div>
+      el.onclick =
+        ()=>{
+          openDetail(
+            card.id
+          );
+        };
 
-      <div class="card-bottom">
 
-        <div class="code-preview">
-          •••• ${esc(
-            String(card.code).slice(-6)
-          )}
-        </div>
+      list.appendChild(
+        el
+      );
 
-        <div>›</div>
-
-      </div>
-    `;
-
-    el.onclick =
-      ()=>openDetail(card.id);
-
-    list.appendChild(el);
-
-  });
+    }
+  );
 
 }
 
+
 /* ============================================================
    ADD
-   ============================================================ */
+============================================================ */
 
 function prepareAdd(){
 
-  if(!editingId){
+  if(
+    !editingId
+  ){
 
-    document.getElementById(
-      "add-title"
-    ).textContent =
-      "Aggiungi carta";
+    document
+      .getElementById(
+        "add-title"
+      )
+      .textContent =
+        "Aggiungi carta";
 
-    document.getElementById(
-      "card-name"
-    ).value = "";
 
-    document.getElementById(
-      "store-name"
-    ).value = "";
+    document
+      .getElementById(
+        "card-name"
+      )
+      .value =
+        "";
 
-    document.getElementById(
-      "card-code"
-    ).value = "";
 
-    document.getElementById(
-      "code-type"
-    ).value = "ean13";
+    document
+      .getElementById(
+        "store-name"
+      )
+      .value =
+        "";
+
+
+    document
+      .getElementById(
+        "card-code"
+      )
+      .value =
+        "";
+
 
     selectedColor =
       colors[2];
@@ -1703,46 +2513,65 @@ function prepareAdd(){
 
   }
 
+
   renderColors();
+
   renderEmojis();
+
   updatePreview();
 
 }
+
 
 function setAddMode(mode){
 
   addMode =
     mode;
 
+
   document
-    .getElementById("tab-scan")
+    .getElementById(
+      "tab-scan"
+    )
     .classList.toggle(
       "active",
       mode === "scan"
     );
 
+
   document
-    .getElementById("tab-manual")
+    .getElementById(
+      "tab-manual"
+    )
     .classList.toggle(
       "active",
       mode === "manual"
     );
 
+
   document
-    .getElementById("scanner-panel")
+    .getElementById(
+      "scanner-panel"
+    )
     .classList.toggle(
       "hidden",
       mode !== "scan"
     );
 
+
   document
-    .getElementById("manual-panel")
+    .getElementById(
+      "manual-panel"
+    )
     .classList.toggle(
       "hidden",
       mode !== "manual"
     );
 
-  if(mode === "scan"){
+
+  if(
+    mode === "scan"
+  ){
 
     startCamera();
 
@@ -1754,9 +2583,10 @@ function setAddMode(mode){
 
 }
 
+
 /* ============================================================
    CAMERA
-   ============================================================ */
+============================================================ */
 
 async function startCamera(){
 
@@ -1764,26 +2594,33 @@ async function startCamera(){
     currentScreen !== "add" ||
     addMode !== "scan"
   ){
+
     return;
+
   }
 
+
   stopCamera();
+
 
   const video =
     document.getElementById(
       "camera-video"
     );
 
+
   const status =
     document.getElementById(
       "camera-status"
     );
 
+
   try{
 
     if(
       !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
+      !navigator.mediaDevices
+        .getUserMedia
     ){
 
       throw new Error(
@@ -1792,11 +2629,14 @@ async function startCamera(){
 
     }
 
+
     status.textContent =
       "Apertura fotocamera…";
 
+
     cameraStream =
-      await navigator.mediaDevices
+      await navigator
+        .mediaDevices
         .getUserMedia({
 
           video:{
@@ -1815,13 +2655,17 @@ async function startCamera(){
 
         });
 
+
     video.srcObject =
       cameraStream;
 
+
     await video.play();
+
 
     status.textContent =
       "Inquadra la carta e scatta una foto";
+
 
   }catch(error){
 
@@ -1830,8 +2674,10 @@ async function startCamera(){
       error
     );
 
+
     status.textContent =
       "Non riesco ad accedere alla fotocamera.";
+
 
     toast(
       "Consenti l'accesso alla fotocamera"
@@ -1841,14 +2687,19 @@ async function startCamera(){
 
 }
 
+
 function stopCamera(){
 
-  if(cameraStream){
+  if(
+    cameraStream
+  ){
 
     cameraStream
       .getTracks()
       .forEach(
-        track=>track.stop()
+        track=>{
+          track.stop();
+        }
       );
 
     cameraStream =
@@ -1856,14 +2707,19 @@ function stopCamera(){
 
   }
 
+
   const video =
     document.getElementById(
       "camera-video"
     );
 
-  if(video){
+
+  if(
+    video
+  ){
 
     video.pause();
+
     video.srcObject =
       null;
 
@@ -1871,22 +2727,27 @@ function stopCamera(){
 
 }
 
+
 /* ============================================================
    FOTO
-   ============================================================ */
+============================================================ */
 
 async function takePhoto(){
 
-  if(scanning){
+  if(
+    scanning
+  ){
 
     return;
 
   }
 
+
   const video =
     document.getElementById(
       "camera-video"
     );
+
 
   if(
     !video.videoWidth ||
@@ -1901,19 +2762,23 @@ async function takePhoto(){
 
   }
 
+
   scanning =
     true;
+
 
   const canvas =
     document.createElement(
       "canvas"
     );
 
+
   canvas.width =
     video.videoWidth;
 
   canvas.height =
     video.videoHeight;
+
 
   const ctx =
     canvas.getContext(
@@ -1923,6 +2788,7 @@ async function takePhoto(){
       }
     );
 
+
   ctx.drawImage(
     video,
     0,
@@ -1931,15 +2797,19 @@ async function takePhoto(){
     canvas.height
   );
 
+
   capturedCanvas =
     canvas;
 
+
   stopCamera();
+
 
   const image =
     document.getElementById(
       "captured-image"
     );
+
 
   image.src =
     canvas.toDataURL(
@@ -1947,23 +2817,32 @@ async function takePhoto(){
       .95
     );
 
+
   image.style.display =
     "block";
 
+
   video.style.display =
     "none";
+
 
   document
     .getElementById(
       "take-photo"
     )
-    .classList.add("hidden");
+    .classList.add(
+      "hidden"
+    );
+
 
   document
     .getElementById(
       "retry-photo"
     )
-    .classList.remove("hidden");
+    .classList.remove(
+      "hidden"
+    );
+
 
   document
     .getElementById(
@@ -1972,21 +2851,29 @@ async function takePhoto(){
     .textContent =
       "Analizzo la foto…";
 
+
   document
     .getElementById(
       "scan-help"
     )
     .textContent =
-      "Sto cercando automaticamente il codice in tutta la foto.";
+      "Cerco il codice e provo a riconoscerne automaticamente il formato.";
+
 
   document
     .getElementById(
       "scan-result"
-    ).innerHTML = "";
+    )
+    .innerHTML =
+      "";
 
-  await decodeImage(canvas);
+
+  await decodeImage(
+    canvas
+  );
 
 }
+
 
 function retryPhoto(){
 
@@ -1996,19 +2883,25 @@ function retryPhoto(){
   capturedCanvas =
     null;
 
+  scanResult =
+    null;
+
+
   document
     .getElementById(
       "captured-image"
     )
     .style.display =
-    "none";
+      "none";
+
 
   document
     .getElementById(
       "camera-video"
     )
     .style.display =
-    "block";
+      "block";
+
 
   document
     .getElementById(
@@ -2018,6 +2911,7 @@ function retryPhoto(){
       "hidden"
     );
 
+
   document
     .getElementById(
       "retry-photo"
@@ -2026,10 +2920,14 @@ function retryPhoto(){
       "hidden"
     );
 
+
   document
     .getElementById(
       "scan-result"
-    ).innerHTML = "";
+    )
+    .innerHTML =
+      "";
+
 
   document
     .getElementById(
@@ -2038,30 +2936,35 @@ function retryPhoto(){
     .textContent =
       "Inquadra la carta e scatta una foto";
 
+
   document
     .getElementById(
       "scan-help"
-    ).textContent =
-      "Metti il codice a barre della carta il più possibile nitido e visibile. Non è necessario centrarlo perfettamente: l'app analizzerà tutta la foto.";
+    )
+    .textContent =
+      "Metti il codice della carta il più possibile nitido e visibile. L'app analizzerà automaticamente tutta la foto.";
+
 
   startCamera();
 
 }
 
+
 /* ============================================================
-   DECODING
-   ============================================================ */
+   DECODER PRINCIPALE
+============================================================ */
 
 async function decodeImage(canvas){
 
   let result =
     null;
 
+
   /*
-   * 1. QUAGGA2
+   * PRIMO TENTATIVO
    *
-   * Specializzato nei barcode lineari.
-   * Cerca automaticamente il barcode nell'immagine.
+   * Quagga2:
+   * barcode lineari.
    */
 
   result =
@@ -2069,7 +2972,10 @@ async function decodeImage(canvas){
       canvas
     );
 
-  if(result){
+
+  if(
+    result
+  ){
 
     finishScan(
       result.code,
@@ -2080,11 +2986,13 @@ async function decodeImage(canvas){
 
   }
 
+
   /*
-   * 2. ZXING
+   * SECONDO TENTATIVO
    *
-   * Secondo tentativo per QR,
-   * Data Matrix, PDF417 e barcode.
+   * ZXing:
+   * QR, Data Matrix, PDF417
+   * e diversi barcode.
    */
 
   result =
@@ -2092,7 +3000,10 @@ async function decodeImage(canvas){
       canvas
     );
 
-  if(result){
+
+  if(
+    result
+  ){
 
     finishScan(
       result.code,
@@ -2103,11 +3014,11 @@ async function decodeImage(canvas){
 
   }
 
+
   /*
-   * 3. Varianti immagine
+   * TERZO TENTATIVO
    *
-   * Alcuni barcode stampati sono più
-   * leggibili dopo contrasto/grayscale.
+   * immagini modificate.
    */
 
   const variants =
@@ -2115,8 +3026,10 @@ async function decodeImage(canvas){
       canvas
     );
 
+
   for(
-    const variant of variants
+    const variant
+    of variants
   ){
 
     result =
@@ -2124,7 +3037,10 @@ async function decodeImage(canvas){
         variant
       );
 
-    if(result){
+
+    if(
+      result
+    ){
 
       finishScan(
         result.code,
@@ -2135,12 +3051,16 @@ async function decodeImage(canvas){
 
     }
 
+
     result =
       await decodeWithZXing(
         variant
       );
 
-    if(result){
+
+    if(
+      result
+    ){
 
       finishScan(
         result.code,
@@ -2153,8 +3073,10 @@ async function decodeImage(canvas){
 
   }
 
+
   scanning =
     false;
+
 
   document
     .getElementById(
@@ -2163,10 +3085,12 @@ async function decodeImage(canvas){
     .textContent =
       "Codice non riconosciuto";
 
+
   document
     .getElementById(
       "scan-result"
-    ).innerHTML = `
+    )
+    .innerHTML = `
 
       <div class="scan-help">
 
@@ -2184,7 +3108,7 @@ async function decodeImage(canvas){
         <br>
         • evitare riflessi;
         <br>
-        • tenere il codice perfettamente a fuoco;
+        • tenere il codice a fuoco;
         <br>
         • scattare una nuova foto.
 
@@ -2194,126 +3118,153 @@ async function decodeImage(canvas){
 
 }
 
+
 /* ============================================================
    QUAGGA
-   ============================================================ */
+============================================================ */
 
 function decodeWithQuagga(canvas){
 
-  return new Promise(resolve=>{
+  return new Promise(
+    resolve=>{
 
-    if(
-      typeof Quagga ===
-      "undefined"
-    ){
+      if(
+        typeof Quagga ===
+        "undefined"
+      ){
 
-      resolve(null);
-      return;
+        resolve(null);
 
-    }
+        return;
 
-    const image =
-      canvas.toDataURL(
-        "image/jpeg",
-        .98
-      );
+      }
 
-    const timeout =
-      setTimeout(
-        ()=>resolve(null),
-        5000
-      );
 
-    try{
+      const image =
+        canvas.toDataURL(
+          "image/jpeg",
+          .98
+        );
 
-      Quagga.decodeSingle({
 
-        src:image,
+      const timeout =
+        setTimeout(
+          ()=>{
+            resolve(null);
+          },
+          6000
+        );
 
-        numOfWorkers:0,
 
-        inputStream:{
-          size:1600,
-          singleChannel:false
-        },
+      try{
 
-        locator:{
-          patchSize:"medium",
-          halfSample:false
-        },
+        Quagga.decodeSingle({
 
-        locate:true,
+          src:image,
 
-        decoder:{
-          readers:[
-            "ean_reader",
-            "ean_8_reader",
-            "code_128_reader",
-            "code_39_reader",
-            "upc_reader",
-            "upc_e_reader"
-          ]
-        },
+          numOfWorkers:0,
 
-        frequency:10
+          inputStream:{
+            size:1600,
+            singleChannel:false
+          },
 
-      },result=>{
+          locator:{
+            patchSize:"medium",
+            halfSample:false
+          },
+
+          locate:true,
+
+          decoder:{
+            readers:[
+
+              "ean_reader",
+              "ean_8_reader",
+              "code_128_reader",
+              "code_39_reader",
+              "upc_reader",
+              "upc_e_reader"
+
+            ]
+          },
+
+          frequency:10
+
+        },result=>{
+
+          clearTimeout(
+            timeout
+          );
+
+
+          if(
+            result &&
+            result.codeResult &&
+            result.codeResult.code
+          ){
+
+            let detectedType =
+              normalizeQuaggaFormat(
+                result.codeResult.format
+              );
+
+
+            /*
+             * IMPORTANTISSIMO:
+             *
+             * Qui prendiamo il tipo
+             * direttamente dal decoder.
+             *
+             * Non chiediamo all'utente
+             * di selezionarlo.
+             */
+
+            resolve({
+
+              code:
+                String(
+                  result.codeResult.code
+                ),
+
+              type:
+                detectedType
+
+            });
+
+          }else{
+
+            resolve(null);
+
+          }
+
+        });
+
+
+      }catch(error){
 
         clearTimeout(
           timeout
         );
 
-        if(
-          result &&
-          result.codeResult &&
-          result.codeResult.code
-        ){
+        console.error(
+          "Quagga:",
+          error
+        );
 
-          const format =
-            normalizeQuaggaFormat(
-              result.codeResult.format
-            );
+        resolve(null);
 
-          resolve({
-
-            code:
-              String(
-                result.codeResult.code
-              ),
-
-            type:
-              format
-
-          });
-
-        }else{
-
-          resolve(null);
-
-        }
-
-      });
-
-    }catch(error){
-
-      clearTimeout(
-        timeout
-      );
-
-      console.error(
-        "Quagga:",
-        error
-      );
-
-      resolve(null);
+      }
 
     }
-
-  });
+  );
 
 }
 
-function normalizeQuaggaFormat(format){
+
+function normalizeQuaggaFormat(
+  format
+){
 
   const map = {
 
@@ -2326,16 +3277,23 @@ function normalizeQuaggaFormat(format){
 
   };
 
-  return map[format]
-    || "code128";
+
+  return (
+    map[format]
+    ||
+    "code128"
+  );
 
 }
 
+
 /* ============================================================
    ZXING
-   ============================================================ */
+============================================================ */
 
-async function decodeWithZXing(canvas){
+async function decodeWithZXing(
+  canvas
+){
 
   if(
     typeof ZXingBrowser ===
@@ -2346,16 +3304,19 @@ async function decodeWithZXing(canvas){
 
   }
 
+
   try{
 
     const reader =
       new ZXingBrowser
         .BrowserMultiFormatReader();
 
+
     const image =
       canvas.toDataURL(
         "image/png"
       );
+
 
     const result =
       await reader
@@ -2363,25 +3324,63 @@ async function decodeWithZXing(canvas){
           image
         );
 
+
     if(
-      result &&
-      result.getText
+      result
     ){
 
-      const code =
-        result.getText();
+      /*
+       * Le API ZXing possono
+       * cambiare leggermente tra
+       * versioni.
+       */
 
-      const type =
-        normalizeZXingType(
-          result.getBarcodeFormat
-            ? result.getBarcodeFormat()
-            : null
-        );
+      let code =
+        null;
 
-      return {
-        code,
-        type
-      };
+      let format =
+        null;
+
+
+      if(
+        typeof result.getText ===
+        "function"
+      ){
+
+        code =
+          result.getText();
+
+      }
+
+
+      if(
+        typeof result.getBarcodeFormat ===
+        "function"
+      ){
+
+        format =
+          result.getBarcodeFormat();
+
+      }
+
+
+      if(
+        code
+      ){
+
+        return {
+
+          code:
+            String(code),
+
+          type:
+            normalizeZXingType(
+              format
+            )
+
+        };
+
+      }
 
     }
 
@@ -2394,87 +3393,123 @@ async function decodeWithZXing(canvas){
 
   }
 
+
   return null;
 
 }
 
-function normalizeZXingType(format){
+
+function normalizeZXingType(
+  format
+){
 
   const name =
     String(
       format ?? ""
-    ).toUpperCase();
+    )
+    .toUpperCase();
+
 
   if(
     name.includes("QR")
   ){
+
     return "qrcode";
+
   }
+
 
   if(
     name.includes("EAN_13")
   ){
+
     return "ean13";
+
   }
+
 
   if(
     name.includes("EAN_8")
   ){
+
     return "ean8";
+
   }
+
 
   if(
     name.includes("CODE_128")
   ){
+
     return "code128";
+
   }
+
 
   if(
     name.includes("CODE_39")
   ){
+
     return "code39";
+
   }
+
 
   if(
     name.includes("UPC_A")
   ){
+
     return "upca";
+
   }
+
 
   if(
     name.includes("UPC_E")
   ){
+
     return "upce";
+
   }
+
 
   if(
     name.includes("PDF")
   ){
+
     return "pdf417";
+
   }
+
 
   if(
     name.includes("DATA_MATRIX")
   ){
+
     return "datamatrix";
+
   }
+
 
   return "code128";
 
 }
 
+
 /* ============================================================
-   VARIANTI FOTO
-   ============================================================ */
+   VARIANTI IMMAGINE
+============================================================ */
 
-function createImageVariants(original){
+function createImageVariants(
+  original
+){
 
-  const variants = [];
+  const variants =
+    [];
+
 
   /*
-   * Non generiamo immagini enormi:
-   * manteniamo la dimensione originale
-   * per non rallentare il telefono.
+   * GRAYSCALE
    */
 
   const gray =
@@ -2482,11 +3517,13 @@ function createImageVariants(original){
       "canvas"
     );
 
+
   gray.width =
     original.width;
 
   gray.height =
     original.height;
+
 
   const gctx =
     gray.getContext(
@@ -2496,11 +3533,13 @@ function createImageVariants(original){
       }
     );
 
+
   gctx.drawImage(
     original,
     0,
     0
   );
+
 
   const image =
     gctx.getImageData(
@@ -2509,6 +3548,7 @@ function createImageVariants(original){
       gray.width,
       gray.height
     );
+
 
   for(
     let i=0;
@@ -2525,12 +3565,14 @@ function createImageVariants(original){
     const b =
       image.data[i+2];
 
+
     const value =
       Math.round(
         .299*r+
         .587*g+
         .114*b
       );
+
 
     image.data[i] =
       value;
@@ -2543,18 +3585,21 @@ function createImageVariants(original){
 
   }
 
+
   gctx.putImageData(
     image,
     0,
     0
   );
 
+
   variants.push(
     gray
   );
 
+
   /*
-   * Contrasto.
+   * CONTRASTO
    */
 
   const contrast =
@@ -2562,22 +3607,26 @@ function createImageVariants(original){
       "canvas"
     );
 
+
   contrast.width =
     original.width;
 
   contrast.height =
     original.height;
 
+
   const cctx =
     contrast.getContext(
       "2d"
     );
+
 
   cctx.drawImage(
     original,
     0,
     0
   );
+
 
   const data =
     cctx.getImageData(
@@ -2587,8 +3636,10 @@ function createImageVariants(original){
       contrast.height
     );
 
+
   const factor =
     1.8;
+
 
   for(
     let i=0;
@@ -2598,20 +3649,53 @@ function createImageVariants(original){
 
     data.data[i] =
       clamp(
-        ((data.data[i]-128)*factor)+128
+        (
+          (
+            data.data[i]
+            -
+            128
+          )
+          *
+          factor
+        )
+        +
+        128
       );
+
 
     data.data[i+1] =
       clamp(
-        ((data.data[i+1]-128)*factor)+128
+        (
+          (
+            data.data[i+1]
+            -
+            128
+          )
+          *
+          factor
+        )
+        +
+        128
       );
+
 
     data.data[i+2] =
       clamp(
-        ((data.data[i+2]-128)*factor)+128
+        (
+          (
+            data.data[i+2]
+            -
+            128
+          )
+          *
+          factor
+        )
+        +
+        128
       );
 
   }
+
 
   cctx.putImageData(
     data,
@@ -2619,13 +3703,16 @@ function createImageVariants(original){
     0
   );
 
+
   variants.push(
     contrast
   );
 
+
   return variants;
 
 }
+
 
 function clamp(value){
 
@@ -2639,16 +3726,19 @@ function clamp(value){
 
 }
 
+
 /* ============================================================
    RISULTATO SCANSIONE
-   ============================================================ */
+============================================================ */
 
 function finishScan(
   code,
   type
 ){
 
-  if(!code){
+  if(
+    !code
+  ){
 
     scanning =
       false;
@@ -2657,59 +3747,96 @@ function finishScan(
 
   }
 
+
+  /*
+   * Se il decoder ci ha dato il tipo,
+   * lo utilizziamo.
+   *
+   * Se non lo ha dato,
+   * facciamo un'inferenza secondaria.
+   */
+
+  const finalType =
+    type ||
+    inferCodeType(
+      code
+    );
+
+
   scanResult = {
 
     code:
       String(code),
 
     type:
-      type || "code128"
+      finalType
 
   };
 
+
   scanning =
     false;
+
 
   document
     .getElementById(
       "camera-status"
     )
     .textContent =
-      "Codice trovato ✓";
+      "Codice riconosciuto ✓";
+
 
   document
     .getElementById(
       "scan-result"
-    ).innerHTML = `
+    )
+    .innerHTML = `
 
       <div class="result">
 
         <div class="result-title">
-          ✓ Codice trovato
+          ✓ Codice riconosciuto
         </div>
 
         <div class="result-code">
-          ${esc(scanResult.code)}
+          ${esc(
+            scanResult.code
+          )}
         </div>
 
         <div class="result-type">
-          ${esc(
-            labels[scanResult.type]
-            || scanResult.type
-          )}
+
+          Tipo rilevato automaticamente:
+          <strong>
+            ${esc(
+              labels[
+                scanResult.type
+              ] ||
+              scanResult.type
+            )}
+          </strong>
+
         </div>
 
       </div>
 
     `;
 
-  if(navigator.vibrate){
+
+  if(
+    navigator.vibrate
+  ){
 
     try{
-      navigator.vibrate(35);
+
+      navigator.vibrate(
+        35
+      );
+
     }catch(e){}
 
   }
+
 
   document
     .getElementById(
@@ -2718,19 +3845,30 @@ function finishScan(
     .textContent =
       scanResult.code;
 
+
   document
     .getElementById(
       "confirm-code-input"
-    ).value =
+    )
+    .value =
       scanResult.code;
+
 
   document
     .getElementById(
       "confirm-type"
     )
     .textContent =
-      labels[scanResult.type]
-      || scanResult.type;
+      "Tipo rilevato automaticamente: "
+      +
+      (
+        labels[
+          scanResult.type
+        ]
+        ||
+        scanResult.type
+      );
+
 
   openSheet(
     "scan-sheet"
@@ -2738,17 +3876,21 @@ function finishScan(
 
 }
 
+
 /* ============================================================
-   CONFERMA CODICE
-   ============================================================ */
+   CONFERMA SCANSIONE
+============================================================ */
 
 function confirmScannedCode(){
 
-  if(!scanResult){
+  if(
+    !scanResult
+  ){
 
     return;
 
   }
+
 
   const value =
     document
@@ -2758,7 +3900,10 @@ function confirmScannedCode(){
       .value
       .trim();
 
-  if(!value){
+
+  if(
+    !value
+  ){
 
     toast(
       "Il codice non può essere vuoto"
@@ -2768,6 +3913,7 @@ function confirmScannedCode(){
 
   }
 
+
   document
     .getElementById(
       "card-code"
@@ -2775,19 +3921,51 @@ function confirmScannedCode(){
     .value =
       value;
 
-  document
-    .getElementById(
-      "code-type"
-    )
-    .value =
+
+  /*
+   * Se l'utente ha modificato il numero,
+   * controlliamo se possiamo ricavare
+   * nuovamente il tipo.
+   *
+   * Se non è possibile, manteniamo
+   * quello rilevato dalla foto.
+   */
+
+  const newInferred =
+    inferCodeType(
+      value
+    );
+
+
+  /*
+   * Manteniamo il tipo della scansione
+   * se il decoder aveva identificato
+   * uno standard preciso.
+   */
+
+  if(
+    scanResult.type
+  ){
+
+    window.detectedManualType =
       scanResult.type;
 
+  }else{
+
+    window.detectedManualType =
+      newInferred;
+
+  }
+
+
   closeScanSheet();
+
 
   setAddMode(
     "manual"
   );
 
+
   document
     .getElementById(
       "card-code"
@@ -2795,31 +3973,33 @@ function confirmScannedCode(){
     .value =
       value;
 
-  document
-    .getElementById(
-      "code-type"
-    )
-    .value =
-      scanResult.type;
+
+  updateAutoType();
+
 
   updatePreview();
 
+
   setTimeout(
     ()=>{
+
       document
         .getElementById(
           "card-name"
         )
         .focus();
+
     },
     150
   );
+
 
   toast(
     "Codice confermato"
   );
 
 }
+
 
 function closeScanSheet(){
 
@@ -2831,6 +4011,7 @@ function closeScanSheet(){
       "active"
     );
 
+
   document
     .getElementById(
       "backdrop"
@@ -2841,9 +4022,10 @@ function closeScanSheet(){
 
 }
 
+
 /* ============================================================
    SHEETS
-   ============================================================ */
+============================================================ */
 
 function openSheet(id){
 
@@ -2855,6 +4037,7 @@ function openSheet(id){
       "active"
     );
 
+
   document
     .getElementById(
       id
@@ -2865,6 +4048,7 @@ function openSheet(id){
 
 }
 
+
 function closeAllSheets(){
 
   document
@@ -2872,11 +4056,13 @@ function closeAllSheets(){
       ".sheet"
     )
     .forEach(
-      el=>
+      el=>{
         el.classList.remove(
           "active"
-        )
+        );
+      }
     );
+
 
   document
     .getElementById(
@@ -2888,6 +4074,7 @@ function closeAllSheets(){
 
 }
 
+
 function openDetailMenu(){
 
   openSheet(
@@ -2896,9 +4083,10 @@ function openDetailMenu(){
 
 }
 
+
 /* ============================================================
-   MANUAL FORM
-   ============================================================ */
+   FORM
+============================================================ */
 
 function renderColors(){
 
@@ -2907,7 +4095,10 @@ function renderColors(){
       "colors"
     );
 
-  root.innerHTML = "";
+
+  root.innerHTML =
+    "";
+
 
   colors.forEach(
     color=>{
@@ -2917,11 +4108,18 @@ function renderColors(){
           "button"
         );
 
+
       el.className =
         "color";
 
+
       el.style.background =
-        `linear-gradient(135deg,${color[0]},${color[1]})`;
+        `linear-gradient(
+          135deg,
+          ${color[0]},
+          ${color[1]}
+        )`;
+
 
       if(
         selectedColor[0] ===
@@ -2934,20 +4132,29 @@ function renderColors(){
 
       }
 
+
       el.onclick =
         ()=>{
+
           selectedColor =
             color;
+
           renderColors();
+
           updatePreview();
+
         };
 
-      root.appendChild(el);
+
+      root.appendChild(
+        el
+      );
 
     }
   );
 
 }
+
 
 function renderEmojis(){
 
@@ -2956,7 +4163,10 @@ function renderEmojis(){
       "emojis"
     );
 
-  root.innerHTML = "";
+
+  root.innerHTML =
+    "";
+
 
   emojis.forEach(
     emoji=>{
@@ -2966,11 +4176,14 @@ function renderEmojis(){
           "button"
         );
 
+
       el.className =
         "emoji";
 
+
       el.textContent =
         emoji;
+
 
       if(
         selectedEmoji ===
@@ -2983,20 +4196,102 @@ function renderEmojis(){
 
       }
 
+
       el.onclick =
         ()=>{
+
           selectedEmoji =
             emoji;
+
           renderEmojis();
+
           updatePreview();
+
         };
 
-      root.appendChild(el);
+
+      root.appendChild(
+        el
+      );
 
     }
   );
 
 }
+
+
+/* ============================================================
+   TIPO AUTOMATICO
+============================================================ */
+
+function updateAutoType(){
+
+  const code =
+    document
+      .getElementById(
+        "card-code"
+      )
+      .value
+      .trim();
+
+
+  let type;
+
+
+  /*
+   * Se arriviamo dalla scansione,
+   * usiamo il tipo che il decoder
+   * aveva effettivamente rilevato.
+   */
+
+  if(
+    window.detectedManualType &&
+    code ===
+      document
+        .getElementById(
+          "confirm-code-input"
+        )
+        ?.value
+        ?.trim()
+  ){
+
+    type =
+      window.detectedManualType;
+
+  }else{
+
+    type =
+      inferCodeType(
+        code
+      );
+
+  }
+
+
+  const el =
+    document.getElementById(
+      "auto-type-value"
+    );
+
+
+  if(
+    !code
+  ){
+
+    el.textContent =
+      "Automatico";
+
+    return;
+
+  }
+
+
+  el.textContent =
+    labels[type] ||
+    type;
+
+}
+
 
 function updatePreview(){
 
@@ -3004,39 +4299,43 @@ function updatePreview(){
     document
       .getElementById(
         "card-name"
-      ).value
+      )
+      .value
       .trim()
       ||
       "Nome carta";
+
 
   const store =
     document
       .getElementById(
         "store-name"
-      ).value
+      )
+      .value
       .trim()
       ||
       "Negozio";
 
-  const type =
-    document
-      .getElementById(
-        "code-type"
-      ).value;
 
   const code =
     document
       .getElementById(
         "card-code"
-      ).value
+      )
+      .value
       .trim()
       ||
       "123456";
 
+
+  updateAutoType();
+
+
   document
     .getElementById(
       "manual-preview"
-    ).innerHTML = `
+    )
+    .innerHTML = `
 
       <div
         class="card"
@@ -3054,7 +4353,9 @@ function updatePreview(){
           <div class="brand">
 
             <div class="logo">
-              ${esc(selectedEmoji)}
+              ${esc(
+                selectedEmoji
+              )}
             </div>
 
             <div>
@@ -3071,22 +4372,27 @@ function updatePreview(){
 
           </div>
 
+
           <div class="type">
-            ${esc(
-              labels[type]
-            )}
+
+            Automatico
+
           </div>
 
         </div>
 
+
         <div class="dash"></div>
+
 
         <div class="card-bottom">
 
           <div class="code-preview">
+
             •••• ${esc(
               code.slice(-6)
             )}
+
           </div>
 
         </div>
@@ -3097,20 +4403,10 @@ function updatePreview(){
 
 }
 
-[
-  "card-name",
-  "store-name",
-  "card-code"
-].forEach(id=>{
 
-  document
-    .getElementById(id)
-    .addEventListener(
-      "input",
-      updatePreview
-    );
-
-});
+/* ============================================================
+   SALVA
+============================================================ */
 
 function saveCard(){
 
@@ -3122,6 +4418,7 @@ function saveCard(){
       .value
       .trim();
 
+
   const store =
     document
       .getElementById(
@@ -3130,12 +4427,6 @@ function saveCard(){
       .value
       .trim();
 
-  const type =
-    document
-      .getElementById(
-        "code-type"
-      )
-      .value;
 
   const code =
     document
@@ -3145,7 +4436,10 @@ function saveCard(){
       .value
       .trim();
 
-  if(!name){
+
+  if(
+    !name
+  ){
 
     toast(
       "Inserisci il nome della carta"
@@ -3155,7 +4449,10 @@ function saveCard(){
 
   }
 
-  if(!code){
+
+  if(
+    !code
+  ){
 
     toast(
       "Inserisci il codice"
@@ -3165,14 +4462,34 @@ function saveCard(){
 
   }
 
-  if(editingId){
+
+  /*
+   * Determinazione automatica.
+   */
+
+  let codeType =
+    window.detectedManualType
+    ||
+    inferCodeType(
+      code
+    );
+
+
+  if(
+    editingId
+  ){
 
     const card =
       cards.find(
-        c=>c.id === editingId
+        c=>
+          c.id ===
+          editingId
       );
 
-    if(card){
+
+    if(
+      card
+    ){
 
       card.name =
         name;
@@ -3180,11 +4497,11 @@ function saveCard(){
       card.store =
         store;
 
-      card.codeType =
-        type;
-
       card.code =
         code;
+
+      card.codeType =
+        codeType;
 
       card.color1 =
         selectedColor[0];
@@ -3197,6 +4514,7 @@ function saveCard(){
 
     }
 
+
     editingId =
       null;
 
@@ -3204,15 +4522,20 @@ function saveCard(){
 
     cards.push({
 
-      id:uid(),
+      id:
+        uid(),
 
-      name,
+      name:
+        name,
 
-      store,
+      store:
+        store,
 
-      codeType:type,
+      code:
+        code,
 
-      code,
+      codeType:
+        codeType,
 
       color1:
         selectedColor[0],
@@ -3230,11 +4553,18 @@ function saveCard(){
 
   }
 
+
+  window.detectedManualType =
+    null;
+
+
   saveCards();
+
 
   toast(
     "Carta salvata ✓"
   );
+
 
   setTimeout(
     ()=>{
@@ -3245,9 +4575,10 @@ function saveCard(){
 
 }
 
+
 /* ============================================================
    DETTAGLIO
-   ============================================================ */
+============================================================ */
 
 function openDetail(id){
 
@@ -3256,27 +4587,37 @@ function openDetail(id){
 
   renderDetail();
 
-  goTo("detail");
+  goTo(
+    "detail"
+  );
 
 }
+
 
 function renderDetail(){
 
   const card =
     cards.find(
-      c=>c.id === currentDetailId
+      c=>
+        c.id ===
+        currentDetailId
     );
 
-  if(!card){
+
+  if(
+    !card
+  ){
 
     return;
 
   }
 
+
   document
     .getElementById(
       "detail-content"
-    ).innerHTML = `
+    )
+    .innerHTML = `
 
       <div
         class="hero"
@@ -3290,22 +4631,29 @@ function renderDetail(){
         ">
 
         <div class="hero-logo">
-          ${esc(card.emoji)}
+          ${esc(
+            card.emoji
+          )}
         </div>
 
         <div>
 
           <h2>
-            ${esc(card.name)}
+            ${esc(
+              card.name
+            )}
           </h2>
 
           <p>
-            ${esc(card.store)}
+            ${esc(
+              card.store
+            )}
           </p>
 
         </div>
 
       </div>
+
 
       <div class="code-panel">
 
@@ -3313,13 +4661,20 @@ function renderDetail(){
           id="barcode-canvas">
         </canvas>
 
+
         <div class="code-number">
-          ${esc(card.code)}
+          ${esc(
+            card.code
+          )}
         </div>
+
 
         <div class="code-type">
           ${esc(
-            labels[card.codeType]
+            labels[
+              card.codeType
+            ] ||
+            "Formato automatico"
           )}
         </div>
 
@@ -3327,40 +4682,56 @@ function renderDetail(){
 
     `;
 
+
   generateCode(
     card
   );
 
 }
 
-function generateCode(card){
+
+/* ============================================================
+   GENERA CODICE
+============================================================ */
+
+function generateCode(
+  card
+){
 
   const canvas =
     document.getElementById(
       "barcode-canvas"
     );
 
+
   try{
 
     const options = {
 
       bcid:
-        bwipMap[card.codeType]
-        || "code128",
+        bwipMap[
+          card.codeType
+        ]
+        ||
+        "code128",
 
       text:
         card.code,
 
-      includetext:false,
+      includetext:
+        false,
 
       backgroundcolor:
         "ffffff",
 
-      paddingwidth:10,
+      paddingwidth:
+        10,
 
-      paddingheight:10
+      paddingheight:
+        10
 
     };
+
 
     if(
       card.codeType ===
@@ -3380,10 +4751,12 @@ function generateCode(card){
 
     }
 
+
     bwipjs.toCanvas(
       canvas,
       options
     );
+
 
   }catch(error){
 
@@ -3391,19 +4764,23 @@ function generateCode(card){
       error
     );
 
+
     canvas.width =
       300;
 
     canvas.height =
       120;
 
+
     const ctx =
       canvas.getContext(
         "2d"
       );
 
+
     ctx.fillStyle =
       "#fff";
+
 
     ctx.fillRect(
       0,
@@ -3412,14 +4789,18 @@ function generateCode(card){
       120
     );
 
+
     ctx.fillStyle =
       "#c8483a";
+
 
     ctx.font =
       "14px Arial";
 
+
     ctx.textAlign =
       "center";
+
 
     ctx.fillText(
       "Codice non valido",
@@ -3431,27 +4812,36 @@ function generateCode(card){
 
 }
 
+
 /* ============================================================
-   MODIFICA / ELIMINA
-   ============================================================ */
+   MODIFICA
+============================================================ */
 
 function editCurrentCard(){
 
   closeAllSheets();
 
+
   const card =
     cards.find(
-      c=>c.id === currentDetailId
+      c=>
+        c.id ===
+        currentDetailId
     );
 
-  if(!card){
+
+  if(
+    !card
+  ){
 
     return;
 
   }
 
+
   editingId =
     card.id;
+
 
   document
     .getElementById(
@@ -3460,12 +4850,14 @@ function editCurrentCard(){
     .textContent =
       "Modifica carta";
 
+
   document
     .getElementById(
       "card-name"
     )
     .value =
       card.name;
+
 
   document
     .getElementById(
@@ -3474,12 +4866,6 @@ function editCurrentCard(){
     .value =
       card.store;
 
-  document
-    .getElementById(
-      "code-type"
-    )
-    .value =
-      card.codeType;
 
   document
     .getElementById(
@@ -3488,101 +4874,148 @@ function editCurrentCard(){
     .value =
       card.code;
 
+
   selectedColor =
     [
       card.color1,
       card.color2
     ];
 
+
   selectedEmoji =
     card.emoji ||
     "💳";
+
+
+  window.detectedManualType =
+    card.codeType;
+
 
   setAddMode(
     "manual"
   );
 
-  goTo("add");
+
+  goTo(
+    "add"
+  );
 
 }
+
+
+/* ============================================================
+   ELIMINA
+============================================================ */
 
 function deleteCurrentCard(){
 
   closeAllSheets();
 
-  if(!currentDetailId){
+
+  if(
+    !currentDetailId
+  ){
 
     return;
 
   }
+
 
   const ok =
     confirm(
       "Vuoi eliminare questa carta?"
     );
 
-  if(!ok){
+
+  if(
+    !ok
+  ){
 
     return;
 
   }
 
+
   cards =
     cards.filter(
-      c=>c.id !== currentDetailId
+      c=>
+        c.id !==
+        currentDetailId
     );
+
 
   saveCards();
 
+
   currentDetailId =
     null;
+
 
   toast(
     "Carta eliminata"
   );
 
-  goTo("home");
+
+  goTo(
+    "home"
+  );
 
 }
 
-/* ============================================================
-   SETTINGS
-   ============================================================ */
 
-function setTheme(theme){
+/* ============================================================
+   TEMA
+============================================================ */
+
+function setTheme(
+  theme
+){
 
   localStorage.setItem(
     SETTINGS_KEY,
     theme
   );
 
+
   applyTheme();
 
 }
+
 
 function applyTheme(){
 
   const theme =
     localStorage.getItem(
       SETTINGS_KEY
-    ) || "auto";
+    )
+    ||
+    "auto";
+
 
   let light =
     false;
 
-  if(theme === "light"){
+
+  if(
+    theme === "light"
+  ){
 
     light =
       true;
 
-  }else if(theme === "auto"){
+  }else if(
+    theme === "auto"
+  ){
 
     light =
-      window.matchMedia(
-        "(prefers-color-scheme:light)"
-      ).matches;
+      window
+        .matchMedia(
+          "(prefers-color-scheme:light)"
+        )
+        .matches;
 
   }
+
 
   document
     .documentElement
@@ -3593,7 +5026,13 @@ function applyTheme(){
 
 }
 
+
 applyTheme();
+
+
+/* ============================================================
+   EXPORT
+============================================================ */
 
 function exportCards(){
 
@@ -3607,31 +5046,39 @@ function exportCards(){
         )
       ],
       {
-        type:"application/json"
+        type:
+          "application/json"
       }
     );
+
 
   const url =
     URL.createObjectURL(
       blob
     );
 
+
   const a =
     document.createElement(
       "a"
     );
 
+
   a.href =
     url;
+
 
   a.download =
     "wallet-carte.json";
 
+
   a.click();
+
 
   URL.revokeObjectURL(
     url
   );
+
 
   toast(
     "Backup esportato"
@@ -3639,28 +5086,42 @@ function exportCards(){
 
 }
 
-function importCards(event){
+
+/* ============================================================
+   IMPORT
+============================================================ */
+
+function importCards(
+  event
+){
 
   const file =
     event.target.files[0];
 
-  if(!file){
+
+  if(
+    !file
+  ){
 
     return;
 
   }
 
+
   const reader =
     new FileReader();
 
+
   reader.onload =
     ()=>{
+
       try{
 
         const imported =
           JSON.parse(
             reader.result
           );
+
 
         if(
           !Array.isArray(
@@ -3674,32 +5135,53 @@ function importCards(event){
 
         }
 
+
         const clean =
-          imported.filter(
-            c=>
-              c &&
-              c.name &&
-              c.code
-          );
+          imported
+            .filter(
+              c=>
+                c &&
+                c.name &&
+                c.code
+            )
+            .map(
+              c=>({
+
+                ...c,
+
+                codeType:
+                  c.codeType
+                  ||
+                  inferCodeType(
+                    c.code
+                  )
+
+              })
+            );
+
 
         cards =
           cards.concat(
             clean
           );
 
+
         saveCards();
 
         renderHome();
 
+
         toast(
           "Carte importate ✓"
         );
+
 
       }catch(error){
 
         console.error(
           error
         );
+
 
         toast(
           "File non valido"
@@ -3709,14 +5191,21 @@ function importCards(event){
 
     };
 
+
   reader.readAsText(
     file
   );
+
 
   event.target.value =
     "";
 
 }
+
+
+/* ============================================================
+   DELETE ALL
+============================================================ */
 
 function deleteAllCards(){
 
@@ -3728,23 +5217,31 @@ function deleteAllCards(){
 
   }
 
+
   const ok =
     confirm(
       "Vuoi eliminare TUTTE le carte?"
     );
 
-  if(!ok){
+
+  if(
+    !ok
+  ){
 
     return;
 
   }
 
+
   cards =
     [];
 
+
   saveCards();
 
+
   renderHome();
+
 
   toast(
     "Tutte le carte eliminate"
@@ -3752,42 +5249,98 @@ function deleteAllCards(){
 
 }
 
+
 /* ============================================================
-   VISIBILITY / PRIVACY CAMERA
-   ============================================================ */
+   INPUT LISTENER
+============================================================ */
 
-document
-  .addEventListener(
-    "visibilitychange",
-    ()=>{
+[
+  "card-name",
+  "store-name",
+  "card-code"
+]
+.forEach(
+  id=>{
 
-      if(
-        document.hidden
-      ){
+    document
+      .getElementById(
+        id
+      )
+      .addEventListener(
+        "input",
+        ()=>{
 
-        stopCamera();
+          if(
+            id ===
+            "card-code"
+          ){
 
-      }else if(
-        currentScreen === "add" &&
-        addMode === "scan" &&
-        !capturedCanvas
-      ){
+            /*
+             * Se l'utente modifica
+             * manualmente il codice,
+             * non dobbiamo continuare
+             * a considerare valido
+             * il vecchio tipo della scansione.
+             */
 
-        startCamera();
+            window.detectedManualType =
+              null;
 
-      }
+          }
+
+
+          updatePreview();
+
+        }
+      );
+
+  }
+);
+
+
+/* ============================================================
+   VISIBILITY
+============================================================ */
+
+document.addEventListener(
+  "visibilitychange",
+  ()=>{
+
+    if(
+      document.hidden
+    ){
+
+      stopCamera();
+
+    }else if(
+
+      currentScreen === "add" &&
+      addMode === "scan" &&
+      !capturedCanvas
+
+    ){
+
+      startCamera();
 
     }
-  );
+
+  }
+);
+
 
 window.addEventListener(
   "pagehide",
   stopCamera
 );
 
+
 /* ============================================================
    AVVIO
-   ============================================================ */
+============================================================ */
+
+window.detectedManualType =
+  null;
+
 
 renderHome();
 
