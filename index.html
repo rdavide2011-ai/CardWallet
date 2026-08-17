@@ -15,6 +15,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- bwip-js: genera QR code e tutti i formati barcode richiesti (unica libreria, browser build) -->
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@4.3.0/dist/bwip-js-min.js"></script>
+<!-- ZXing: decoding LIVE da fotocamera per lo scanner interno all'app (non dipende da BarcodeDetector) -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23121214'/%3E%3Crect x='18' y='34' width='64' height='42' rx='8' fill='none' stroke='%23F2B84B' stroke-width='6'/%3E%3Ccircle cx='18' cy='55' r='6' fill='%23F2B84B'/%3E%3C/svg%3E">
 
 <style>
@@ -421,6 +423,54 @@ button{ font-family:inherit; }
 
 /* file input trick for import */
 .file-input-hidden{ display:none; }
+
+/* ---------------- FAB "+" premium press animation ---------------- */
+@keyframes fabPop{
+  0%{ transform:scale(1); }
+  35%{ transform:scale(0.84); }
+  65%{ transform:scale(1.08); }
+  100%{ transform:scale(1); }
+}
+@keyframes fabIconSpin{
+  0%{ transform:rotate(0deg) scale(1); }
+  50%{ transform:rotate(90deg) scale(0.78); }
+  100%{ transform:rotate(0deg) scale(1); }
+}
+@keyframes fabGlowPulse{
+  0%{ box-shadow:0 10px 20px -6px rgba(242,184,75,0.55); }
+  40%{ box-shadow:0 6px 26px -2px rgba(242,184,75,0.85); }
+  100%{ box-shadow:0 10px 20px -6px rgba(242,184,75,0.55); }
+}
+.nav-item .fab-center{
+  transition: transform .12s ease;
+  will-change: transform;
+}
+.nav-item .fab-center.fab-pop{
+  animation: fabPop .34s cubic-bezier(.22,1,.36,1), fabGlowPulse .34s ease;
+}
+.nav-item .fab-center.fab-pop svg{
+  animation: fabIconSpin .34s cubic-bezier(.22,1,.36,1);
+}
+
+/* ---------------- Scanner: extra states for the internal live scanner ---------------- */
+.scanner-loading{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  color:var(--ink-dim); font-size:13.5px;
+}
+.scanner-spinner{
+  width:16px; height:16px; border-radius:50%;
+  border:2px solid var(--line-strong); border-top-color:var(--accent);
+  animation: spinnerRotate .7s linear infinite;
+  flex-shrink:0;
+}
+@keyframes spinnerRotate{ to{ transform:rotate(360deg); } }
+.scan-frame.found{
+  border-color: var(--success);
+  box-shadow:0 0 0 999px rgba(0,0,0,.32), 0 0 24px 4px rgba(127,191,143,.55);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.scan-line.hidden{ display:none; }
+.scanner-close-row{ display:flex; gap:10px; }
 </style>
 </head>
 <body>
@@ -467,10 +517,10 @@ button{ font-family:inherit; }
       <div id="panel-scan" class="scanner-wrap">
         <div class="scanner-viewport" id="scanner-viewport">
           <video id="scanner-video" playsinline muted autoplay></video>
-          <div class="scan-frame"></div>
-          <div class="scan-line"></div>
+          <div class="scan-frame" id="scan-frame"></div>
+          <div class="scan-line" id="scan-line"></div>
         </div>
-        <p class="scanner-status" id="scanner-status">Inquadra il codice a barre o QR della tessera</p>
+        <p class="scanner-status" id="scanner-status">Inquadra il codice della tua carta</p>
         <div id="scan-result-slot"></div>
         <div id="scanner-fallback-slot"></div>
       </div>
@@ -613,8 +663,8 @@ button{ font-family:inherit; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>
         <span>Home</span>
       </button>
-      <button class="nav-item" data-nav="add">
-        <span class="fab-center">
+      <button class="nav-item" data-nav="add" id="nav-add-btn">
+        <span class="fab-center" id="fab-center">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
         </span>
       </button>
@@ -712,9 +762,8 @@ let state = {
   editingId: null,      // carta in modifica (null = nuova)
   activeDetailId: null,
   addMode: "scan",
-  scanStream: null,
-  scanRAF: null,
-  scanDetector: null,
+  codeReader: null,     // istanza ZXing.BrowserMultiFormatReader
+  scanControls: null,   // controlli restituiti dalla scansione continua ZXing
   scannedPayload: null,
   selectedColor: null,
   selectedEmoji: "💳"
@@ -732,11 +781,23 @@ const BWIP_MAP = {
   qrcode:"qrcode", ean13:"ean13", ean8:"ean8", code128:"code128",
   code39:"code39", upca:"upca", upce:"upce", pdf417:"pdf417", datamatrix:"datamatrix"
 };
-// mappa formato interno -> formato riportato da BarcodeDetector
-const DETECTOR_FORMAT_MAP = {
-  "qr_code":"qrcode", "ean_13":"ean13", "ean_8":"ean8", "code_128":"code128",
-  "code_39":"code39", "upc_a":"upca", "upc_e":"upce", "pdf417":"pdf417", "data_matrix":"datamatrix"
-};
+// mappa BarcodeFormat di ZXing -> formato interno (costruita dopo il caricamento della libreria)
+let ZXING_FORMAT_MAP = null;
+let ZXING_HINTED_FORMATS = null;
+function buildZxingMaps(){
+  if(typeof ZXing === "undefined") return;
+  ZXING_FORMAT_MAP = {};
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.QR_CODE] = 'qrcode';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.EAN_13] = 'ean13';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.EAN_8] = 'ean8';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.CODE_128] = 'code128';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.CODE_39] = 'code39';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.UPC_A] = 'upca';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.UPC_E] = 'upce';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.PDF_417] = 'pdf417';
+  ZXING_FORMAT_MAP[ZXing.BarcodeFormat.DATA_MATRIX] = 'datamatrix';
+  ZXING_HINTED_FORMATS = Object.keys(ZXING_FORMAT_MAP).map(k => parseInt(k, 10));
+}
 
 const PRESET_COLORS = [
   ["#2e7d46","#1c5c30"], // verde (Esselunga-style)
@@ -808,9 +869,26 @@ function goTo(screenName){
   if(screenName === 'settings') renderSettings();
 }
 
+/* Pulsanti di navigazione: il "+" centrale ha un feedback animato dedicato
+   prima di aprire la schermata Aggiungi; gli altri navigano subito. */
 document.querySelectorAll('[data-nav]').forEach(btn=>{
-  btn.addEventListener('click', ()=> goTo(btn.dataset.nav));
+  if(btn.id === 'nav-add-btn'){
+    btn.addEventListener('click', ()=> triggerFabPress(btn));
+  }else{
+    btn.addEventListener('click', ()=> goTo(btn.dataset.nav));
+  }
 });
+
+function triggerFabPress(btn){
+  const fab = document.getElementById('fab-center');
+  if(fab){
+    fab.classList.remove('fab-pop');
+    void fab.offsetWidth; // forza il reflow per poter far ripartire l'animazione a ripetizione
+    fab.classList.add('fab-pop');
+  }
+  if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(e){} }
+  setTimeout(()=>{ goTo(btn.dataset.nav); }, 150);
+}
 
 /* ===========================================================
    HOME — elenco carte
@@ -1066,80 +1144,121 @@ document.getElementById('manual-form').addEventListener('submit', (e)=>{
 });
 
 /* ===========================================================
-   SCANNER FOTOCAMERA
-   BarcodeDetector nativo quando disponibile (copre QR + tutti
-   i formati barcode principali). Fallback dichiarato se il
-   browser non lo supporta: si passa all'inserimento manuale.
+   SCANNER FOTOCAMERA — SCANNER INTERNO ALL'APP
+   Non usa BarcodeDetector. Usa ZXing (@zxing/library) per fare
+   il decoding LIVE del flusso video della fotocamera, frame dopo
+   frame, direttamente nella pagina. Nessun dato (immagini o
+   codici) lascia mai il dispositivo: tutto resta lato client e
+   viene poi salvato solo in localStorage.
    =========================================================== */
 async function startScanMode(){
   if(state.currentScreen !== 'add' || state.addMode !== 'scan') return;
   const statusEl = document.getElementById('scanner-status');
   const fallbackSlot = document.getElementById('scanner-fallback-slot');
   const resultSlot = document.getElementById('scan-result-slot');
+  const viewport = document.getElementById('scanner-viewport');
+  const frame = document.getElementById('scan-frame');
+  const line = document.getElementById('scan-line');
   resultSlot.innerHTML = "";
   fallbackSlot.innerHTML = "";
   state.scannedPayload = null;
+  frame.classList.remove('found');
+  line.classList.remove('hidden');
+  viewport.style.display = 'block';
 
-  if(!('BarcodeDetector' in window)){
+  if(typeof ZXing === 'undefined'){
     statusEl.textContent = "";
+    viewport.style.display = 'none';
     fallbackSlot.innerHTML = `
       <div class="scanner-fallback">
-        Il tuo browser non supporta la scansione automatica dei codici a barre.
-        Usa la scheda <strong>Manuale</strong> per inserire il codice a mano.
+        Impossibile caricare il modulo di scansione. Usa la scheda <strong>Manuale</strong> per inserire il codice a mano.
       </div>`;
-    document.getElementById('scanner-viewport').style.display = 'none';
     return;
   }
-  document.getElementById('scanner-viewport').style.display = 'block';
+  if(!ZXING_FORMAT_MAP) buildZxingMaps();
+
+  statusEl.innerHTML = `<span class="scanner-loading"><span class="scanner-spinner"></span> Richiesta autorizzazione fotocamera…</span>`;
+
+  // ferma un'eventuale sessione precedente prima di avviarne una nuova
+  stopScanner();
 
   try{
-    const formats = await BarcodeDetector.getSupportedFormats();
-    const wanted = ['qr_code','ean_13','ean_8','code_128','code_39','upc_a','upc_e','pdf417','data_matrix'].filter(f=>formats.includes(f));
-    state.scanDetector = new BarcodeDetector({ formats: wanted.length ? wanted : formats });
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, ZXING_HINTED_FORMATS);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    state.codeReader = new ZXing.BrowserMultiFormatReader(hints, 250);
   }catch(e){
-    console.error("BarcodeDetector init error:", e);
+    console.error("Errore inizializzazione scanner:", e);
+    statusEl.textContent = "";
+    viewport.style.display = 'none';
     fallbackSlot.innerHTML = `<div class="scanner-fallback">Impossibile inizializzare lo scanner su questo browser. Usa l'inserimento manuale.</div>`;
     return;
   }
 
+  const video = document.getElementById('scanner-video');
+  const constraints = { video: { facingMode: { ideal: "environment" } }, audio: false };
+
   try{
-    statusEl.textContent = "Richiesta autorizzazione fotocamera…";
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } }, audio: false
+    const controls = await state.codeReader.decodeFromConstraints(constraints, video, (result, err)=>{
+      // "err" qui è quasi sempre un NotFoundException emesso ad ogni frame senza
+      // codice: è normale e va ignorato, si continua a scansionare in silenzio.
+      if(result && !state.scannedPayload){
+        handleScanResult(result);
+      }
     });
-    state.scanStream = stream;
-    const video = document.getElementById('scanner-video');
-    video.srcObject = stream;
-    await video.play();
-    statusEl.textContent = "Inquadra il codice a barre o QR della tessera";
-    scanLoop();
+    state.scanControls = controls;
+    if(!state.scannedPayload){
+      statusEl.textContent = "Inquadra il codice della tua carta";
+    }
   }catch(err){
     console.error("Errore accesso fotocamera:", err);
     statusEl.textContent = "";
-    fallbackSlot.innerHTML = `
-      <div class="scanner-fallback">
-        Non è stato possibile accedere alla fotocamera (permesso negato o non disponibile).
-        Puoi comunque aggiungere la carta dalla scheda <strong>Manuale</strong>.
-      </div>`;
+    viewport.style.display = 'none';
+    const name = err && err.name;
+    if(name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError'){
+      fallbackSlot.innerHTML = `
+        <div class="scanner-fallback">
+          Accesso alla fotocamera negato. Consenti l'accesso alla fotocamera per utilizzare lo scanner.<br><br>
+          Puoi comunque aggiungere la carta dalla scheda <strong>Manuale</strong>.
+        </div>`;
+    }else if(name === 'NotFoundError' || name === 'OverconstrainedError'){
+      fallbackSlot.innerHTML = `
+        <div class="scanner-fallback">
+          Nessuna fotocamera disponibile su questo dispositivo. Usa la scheda <strong>Manuale</strong> per inserire il codice a mano.
+        </div>`;
+    }else{
+      fallbackSlot.innerHTML = `
+        <div class="scanner-fallback">
+          Non è stato possibile accedere alla fotocamera. Puoi comunque aggiungere la carta dalla scheda <strong>Manuale</strong>.
+        </div>`;
+    }
   }
 }
 
-function scanLoop(){
-  if(state.currentScreen !== 'add' || state.addMode !== 'scan' || !state.scanStream) return;
-  const video = document.getElementById('scanner-video');
-  if(video.readyState >= 2 && state.scanDetector){
-    state.scanDetector.detect(video).then(codes=>{
-      if(codes && codes.length > 0 && !state.scannedPayload){
-        handleScanResult(codes[0]);
-      }
-    }).catch(()=>{ /* frame non leggibile, si riprova al prossimo giro */ });
-  }
-  state.scanRAF = requestAnimationFrame(scanLoop);
-}
+function handleScanResult(result){
+  if(state.scannedPayload) return; // evita acquisizioni multiple sullo stesso frame
 
-function handleScanResult(detected){
-  const internalFormat = DETECTOR_FORMAT_MAP[detected.format] || 'qrcode';
-  state.scannedPayload = { code: detected.rawValue, codeType: internalFormat };
+  let zxFormat, rawValue;
+  try{
+    zxFormat = result.getBarcodeFormat ? result.getBarcodeFormat() : result.format;
+    rawValue = result.getText ? result.getText() : result.text;
+  }catch(e){
+    return;
+  }
+  if(!rawValue) return;
+
+  const internalFormat = (ZXING_FORMAT_MAP && ZXING_FORMAT_MAP[zxFormat]) || 'qrcode';
+  state.scannedPayload = { code: rawValue, codeType: internalFormat };
+
+  // feedback aptico breve, quando disponibile
+  if(navigator.vibrate){ try{ navigator.vibrate(80); }catch(e){} }
+
+  // feedback visivo di conferma sulla cornice di scansione
+  const frame = document.getElementById('scan-frame');
+  const line = document.getElementById('scan-line');
+  frame.classList.add('found');
+  line.classList.add('hidden');
+
   document.getElementById('scanner-status').textContent = "";
   const slot = document.getElementById('scan-result-slot');
   slot.innerHTML = `
@@ -1149,7 +1268,7 @@ function handleScanResult(detected){
       </div>
       <div class="meta">
         <div class="t1">Codice rilevato ✓ — ${CODE_TYPE_LABEL[internalFormat] || internalFormat}</div>
-        <div class="t2">${escapeHTML(detected.rawValue)}</div>
+        <div class="t2">${escapeHTML(rawValue)}</div>
       </div>
     </div>
   `;
@@ -1159,7 +1278,7 @@ function handleScanResult(detected){
   btn.textContent = 'Usa questo codice';
   btn.addEventListener('click', ()=>{
     stopScanner();
-    // passa alla scheda manuale con i campi precompilati
+    // passa alla scheda manuale con i campi precompilati automaticamente
     document.querySelector('#add-segmented button[data-mode="manual"]').click();
     document.getElementById('f-codetype').value = state.scannedPayload.codeType;
     document.getElementById('f-code').value = state.scannedPayload.code;
@@ -1176,20 +1295,29 @@ function handleScanResult(detected){
   rescanBtn.addEventListener('click', ()=>{
     state.scannedPayload = null;
     slot.innerHTML = "";
-    document.getElementById('scanner-status').textContent = "Inquadra il codice a barre o QR della tessera";
+    frame.classList.remove('found');
+    line.classList.remove('hidden');
+    document.getElementById('scanner-status').textContent = "Inquadra il codice della tua carta";
   });
   slot.appendChild(rescanBtn);
 }
 
 function stopScanner(){
-  if(state.scanRAF) cancelAnimationFrame(state.scanRAF);
-  state.scanRAF = null;
-  if(state.scanStream){
-    state.scanStream.getTracks().forEach(t=>t.stop());
-    state.scanStream = null;
+  if(state.scanControls){
+    try{ state.scanControls.stop(); }catch(e){ /* nessuna sessione attiva */ }
+    state.scanControls = null;
+  }
+  if(state.codeReader){
+    try{ state.codeReader.reset(); }catch(e){ /* già rilasciato */ }
+    state.codeReader = null;
   }
   const video = document.getElementById('scanner-video');
-  if(video) video.srcObject = null;
+  if(video && video.srcObject){
+    try{
+      video.srcObject.getTracks().forEach(t=> t.stop());
+    }catch(e){}
+    video.srcObject = null;
+  }
 }
 
 /* ===========================================================
