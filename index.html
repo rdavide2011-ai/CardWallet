@@ -471,6 +471,19 @@ button{ font-family:inherit; }
 }
 .scan-line.hidden{ display:none; }
 .scanner-close-row{ display:flex; gap:10px; }
+
+/* ---------------- Scan confirmation sheet ---------------- */
+.scan-confirm-code-box{
+  background:var(--surface-2); border:1.5px solid var(--line); border-radius:16px;
+  padding:16px; text-align:center; margin-bottom:6px;
+}
+.scan-confirm-code-box .code-type-pill{
+  display:inline-block; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:8px; margin-bottom:10px;
+}
+.scan-confirm-code-box .code-value{
+  font-family:'Sora',sans-serif; font-weight:700; font-size:19px; letter-spacing:.06em; word-break:break-all;
+}
 </style>
 </head>
 <body>
@@ -520,7 +533,7 @@ button{ font-family:inherit; }
           <div class="scan-frame" id="scan-frame"></div>
           <div class="scan-line" id="scan-line"></div>
         </div>
-        <p class="scanner-status" id="scanner-status">Inquadra il codice della tua carta</p>
+        <p class="scanner-status" id="scanner-status">Inquadra il codice a barre dentro la cornice</p>
         <div id="scan-result-slot"></div>
         <div id="scanner-fallback-slot"></div>
       </div>
@@ -707,6 +720,35 @@ button{ font-family:inherit; }
     <div class="sheet-actions">
       <button class="btn btn-secondary" id="confirm-wipe-cancel">Annulla</button>
       <button class="btn" id="confirm-wipe-ok" style="background:var(--danger); color:#fff;">Elimina tutto</button>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: conferma codice scansionato ============ -->
+  <div class="sheet" id="sheet-scan-confirm">
+    <div class="handle"></div>
+    <h3>Codice a barre rilevato</h3>
+    <p class="desc">Controlla che il codice sia corretto.</p>
+
+    <div id="scan-confirm-display">
+      <div class="scan-confirm-code-box">
+        <span class="code-type-pill" id="scan-confirm-type-pill">—</span>
+        <div class="code-value" id="scan-confirm-code-value">—</div>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-secondary" id="scan-confirm-edit-btn">Modifica codice</button>
+        <button class="btn btn-primary" id="scan-confirm-ok-btn">Conferma</button>
+      </div>
+    </div>
+
+    <div id="scan-confirm-edit" style="display:none;">
+      <div class="field">
+        <label for="scan-confirm-input">Modifica codice</label>
+        <input type="text" id="scan-confirm-input">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-secondary" id="scan-confirm-edit-cancel">Annulla</button>
+        <button class="btn btn-primary" id="scan-confirm-edit-save">Conferma</button>
+      </div>
     </div>
   </div>
 
@@ -1208,7 +1250,7 @@ async function startScanMode(){
     });
     state.scanControls = controls;
     if(!state.scannedPayload){
-      statusEl.textContent = "Inquadra il codice della tua carta";
+      statusEl.textContent = "Inquadra il codice a barre dentro la cornice";
     }
   }catch(err){
     console.error("Errore accesso fotocamera:", err);
@@ -1253,53 +1295,19 @@ function handleScanResult(result){
   // feedback aptico breve, quando disponibile
   if(navigator.vibrate){ try{ navigator.vibrate(80); }catch(e){} }
 
-  // feedback visivo di conferma sulla cornice di scansione
+  // feedback visivo di conferma sulla cornice di scansione, poi ferma
+  // davvero la scansione (rilascia la fotocamera) e apre la schermata
+  // di conferma del codice.
   const frame = document.getElementById('scan-frame');
   const line = document.getElementById('scan-line');
   frame.classList.add('found');
   line.classList.add('hidden');
+  document.getElementById('scanner-status').textContent = "Codice rilevato";
 
-  document.getElementById('scanner-status').textContent = "";
-  const slot = document.getElementById('scan-result-slot');
-  slot.innerHTML = `
-    <div class="scan-result-card">
-      <div class="check">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
-      </div>
-      <div class="meta">
-        <div class="t1">Codice rilevato ✓ — ${CODE_TYPE_LABEL[internalFormat] || internalFormat}</div>
-        <div class="t2">${escapeHTML(rawValue)}</div>
-      </div>
-    </div>
-  `;
-  const btn = document.createElement('button');
-  btn.className = 'btn btn-primary';
-  btn.style.marginTop = '14px';
-  btn.textContent = 'Usa questo codice';
-  btn.addEventListener('click', ()=>{
+  setTimeout(()=>{
     stopScanner();
-    // passa alla scheda manuale con i campi precompilati automaticamente
-    document.querySelector('#add-segmented button[data-mode="manual"]').click();
-    document.getElementById('f-codetype').value = state.scannedPayload.codeType;
-    document.getElementById('f-code').value = state.scannedPayload.code;
-    updateCodeHelp();
-    updateManualPreview();
-    document.getElementById('f-cardname').focus();
-  });
-  slot.appendChild(btn);
-
-  const rescanBtn = document.createElement('button');
-  rescanBtn.className = 'btn btn-ghost';
-  rescanBtn.style.marginTop = '6px';
-  rescanBtn.textContent = 'Scansiona di nuovo';
-  rescanBtn.addEventListener('click', ()=>{
-    state.scannedPayload = null;
-    slot.innerHTML = "";
-    frame.classList.remove('found');
-    line.classList.remove('hidden');
-    document.getElementById('scanner-status').textContent = "Inquadra il codice della tua carta";
-  });
-  slot.appendChild(rescanBtn);
+    openScanConfirmSheet();
+  }, 320);
 }
 
 function stopScanner(){
@@ -1317,6 +1325,77 @@ function stopScanner(){
       video.srcObject.getTracks().forEach(t=> t.stop());
     }catch(e){}
     video.srcObject = null;
+  }
+}
+
+/* ===========================================================
+   SCHERMATA DI CONFERMA DEL CODICE SCANSIONATO
+   Mostrata subito dopo che lo scanner ha realmente decodificato
+   un barcode dal flusso video. Permette di confermare il numero
+   letto oppure correggerlo manualmente prima di procedere alla
+   creazione della carta.
+   =========================================================== */
+function openScanConfirmSheet(){
+  if(!state.scannedPayload) return;
+  showScanConfirmDisplay();
+  openSheet('sheet-scan-confirm');
+}
+
+function showScanConfirmDisplay(){
+  const payload = state.scannedPayload;
+  if(!payload) return;
+  document.getElementById('scan-confirm-type-pill').textContent = CODE_TYPE_LABEL[payload.codeType] || payload.codeType;
+  document.getElementById('scan-confirm-code-value').textContent = payload.code;
+  document.getElementById('scan-confirm-display').style.display = 'block';
+  document.getElementById('scan-confirm-edit').style.display = 'none';
+}
+
+document.getElementById('scan-confirm-edit-btn').addEventListener('click', ()=>{
+  if(!state.scannedPayload) return;
+  document.getElementById('scan-confirm-input').value = state.scannedPayload.code;
+  document.getElementById('scan-confirm-display').style.display = 'none';
+  document.getElementById('scan-confirm-edit').style.display = 'block';
+  setTimeout(()=> document.getElementById('scan-confirm-input').focus(), 50);
+});
+
+document.getElementById('scan-confirm-edit-cancel').addEventListener('click', ()=>{
+  showScanConfirmDisplay();
+});
+
+document.getElementById('scan-confirm-edit-save').addEventListener('click', ()=>{
+  const val = document.getElementById('scan-confirm-input').value.trim();
+  if(!val){
+    showToast("Il codice non può essere vuoto");
+    return;
+  }
+  state.scannedPayload.code = val;
+  showScanConfirmDisplay();
+});
+
+document.getElementById('scan-confirm-ok-btn').addEventListener('click', ()=>{
+  const payload = state.scannedPayload;
+  if(!payload) return;
+  closeSheet('sheet-scan-confirm');
+  // trasferisce automaticamente il codice riconosciuto nella procedura
+  // di creazione carta: passa alla scheda Manuale con i campi
+  // già compilati e il tipo di codice selezionato correttamente.
+  document.querySelector('#add-segmented button[data-mode="manual"]').click();
+  document.getElementById('f-codetype').value = payload.codeType;
+  document.getElementById('f-code').value = payload.code;
+  updateCodeHelp();
+  updateManualPreview();
+  showToast("Codice confermato: completa i dati della carta");
+  setTimeout(()=> document.getElementById('f-cardname').focus(), 150);
+});
+
+/* Se l'utente chiude la schermata di conferma toccando lo sfondo,
+   senza confermare né modificare, la fotocamera riparte per
+   permettere una nuova scansione. */
+function handleScanConfirmDismiss(){
+  if(state.currentScreen === 'add' && state.addMode === 'scan'){
+    document.getElementById('scan-result-slot').innerHTML = "";
+    document.getElementById('scanner-status').textContent = "Inquadra il codice a barre dentro la cornice";
+    startScanMode();
   }
 }
 
@@ -1424,13 +1503,17 @@ function openSheet(id){
   document.getElementById(id).classList.add('active');
 }
 function closeSheet(id){
+  const wasActive = document.getElementById(id).classList.contains('active');
   document.getElementById(id).classList.remove('active');
   const anyOpen = document.querySelectorAll('.sheet.active').length > 0;
   if(!anyOpen) document.getElementById('sheet-backdrop').classList.remove('active');
+  if(id === 'sheet-scan-confirm' && wasActive) handleScanConfirmDismiss();
 }
 document.getElementById('sheet-backdrop').addEventListener('click', ()=>{
+  const openIds = Array.from(document.querySelectorAll('.sheet.active')).map(s=>s.id);
   document.querySelectorAll('.sheet.active').forEach(s=> s.classList.remove('active'));
   document.getElementById('sheet-backdrop').classList.remove('active');
+  if(openIds.includes('sheet-scan-confirm')) handleScanConfirmDismiss();
 });
 
 /* ===========================================================
