@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Wallet — Carte Fedeltà</title>
+<meta name="description" content="Il tuo portafoglio digitale per le tessere fedeltà. Tutto salvato solo sul tuo telefono.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wallet">
+<meta name="mobile-web-app-capable" content="yes">
+<meta id="theme-color-meta" name="theme-color" content="#121214">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- bwip-js: genera QR code e tutti i formati barcode richiesti (unica libreria, browser build) -->
+<script src="https://cdn.jsdelivr.net/npm/bwip-js@4.3.0/dist/bwip-js-min.js"></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23121214'/%3E%3Crect x='18' y='34' width='64' height='42' rx='8' fill='none' stroke='%23F2B84B' stroke-width='6'/%3E%3Ccircle cx='18' cy='55' r='6' fill='%23F2B84B'/%3E%3C/svg%3E">
+
+<style>
+/* ===========================================================
+   DESIGN TOKENS
+   =========================================================== */
+:root{
+  --bg:#121214;
+  --surface:#1c1c1f;
+  --surface-2:#26262a;
+  --surface-3:#2f2f34;
+  --ink:#f5f3ef;
+  --ink-dim:#a8a6a3;
+  --ink-faint:#6f6d6a;
+  --accent:#f2b84b;
+  --accent-ink:#1a1400;
+  --accent-dim:#3a2f14;
+  --line:rgba(245,243,239,0.09);
+  --line-strong:rgba(245,243,239,0.16);
+  --danger:#e0654f;
+  --success:#7fbf8f;
+  --radius-lg:26px;
+  --radius-md:18px;
+  --radius-sm:12px;
+  --shadow-card:0 18px 40px -18px rgba(0,0,0,0.55);
+  --shadow-pop:0 10px 30px -8px rgba(0,0,0,0.5);
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#faf8f5;
+  --surface:#ffffff;
+  --surface-2:#f2efe9;
+  --surface-3:#e9e5dd;
+  --ink:#18171a;
+  --ink-dim:#6b6864;
+  --ink-faint:#9b978f;
+  --accent:#c07f1e;
+  --accent-ink:#ffffff;
+  --accent-dim:#f4e3c2;
+  --line:rgba(23,23,26,0.09);
+  --line-strong:rgba(23,23,26,0.16);
+  --danger:#c8483a;
+  --success:#3f8f56;
+  --shadow-card:0 18px 34px -18px rgba(23,20,10,0.22);
+  --shadow-pop:0 10px 26px -8px rgba(23,20,10,0.2);
+  color-scheme:light;
+}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+  overscroll-behavior:none;
+  transition:background .35s ease, color .35s ease;
+}
+h1,h2,h3,.display{ font-family:'Sora',sans-serif; letter-spacing:-0.01em; }
+button{ font-family:inherit; }
+::selection{ background:var(--accent); color:var(--accent-ink); }
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.001s !important; transition-duration:.001s !important; }
+}
+
+/* App shell: fills the viewport, single scroll region per screen */
+#app{
+  position:fixed; inset:0;
+  max-width:560px; margin:0 auto;
+  display:flex; flex-direction:column;
+  background:var(--bg);
+}
+
+.screen{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  opacity:0; pointer-events:none;
+  transform:translateY(10px);
+  transition:opacity .28s cubic-bezier(.22,1,.36,1), transform .32s cubic-bezier(.22,1,.36,1);
+}
+.screen.active{ opacity:1; pointer-events:auto; transform:translateY(0); }
+.screen.exit-left{ transform:translateX(-4%); }
+
+/* ---------------- Top bar ---------------- */
+.topbar{
+  padding: calc(18px + var(--safe-top)) 20px 12px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  flex-shrink:0;
+}
+.topbar h1{ font-size:26px; margin:0; font-weight:700; }
+.topbar .eyebrow{
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);
+  font-weight:600; margin:0 0 2px;
+}
+.icon-btn{
+  width:42px; height:42px; border-radius:14px; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0; transition:background .15s, transform .1s, border-color .15s;
+}
+.icon-btn:active{ transform:scale(.92); }
+.icon-btn svg{ width:20px; height:20px; }
+
+/* ---------------- Scroll body ---------------- */
+.scroll-body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:110px; }
+.scroll-body.no-nav-pad{ padding-bottom:calc(28px + var(--safe-bottom)); }
+
+/* ---------------- Empty state ---------------- */
+.empty-state{
+  margin:14vh 28px 0; text-align:center; color:var(--ink-dim);
+}
+.empty-state .glyph{
+  width:76px; height:76px; margin:0 auto 18px; border-radius:22px;
+  background:var(--surface-2); display:flex; align-items:center; justify-content:center;
+  border:1px dashed var(--line-strong);
+}
+.empty-state .glyph svg{ width:32px; height:32px; color:var(--ink-faint); }
+.empty-state h3{ font-size:18px; margin:0 0 6px; color:var(--ink); }
+.empty-state p{ font-size:14px; line-height:1.5; margin:0 0 22px; }
+
+/* ===========================================================
+   TICKET CARD  — signature element
+   Forma a "biglietto": tacche semicircolari sui lati + linea
+   tratteggiata che separa zona brand da zona meta, come una
+   vera tessera perforata.
+   =========================================================== */
+.card-list{ padding:6px 16px 0; display:flex; flex-direction:column; gap:14px; }
+
+.ticket{
+  position:relative;
+  border-radius:22px;
+  padding:18px 20px 16px;
+  cursor:pointer;
+  color:#fff;
+  box-shadow:var(--shadow-card);
+  -webkit-mask-image: radial-gradient(circle 11px at 0px 64px, transparent 11px, #000 11.5px),
+                       radial-gradient(circle 11px at 100% 64px, transparent 11px, #000 11.5px);
+  mask-image: radial-gradient(circle 11px at 0px 64px, transparent 11px, #000 11.5px),
+              radial-gradient(circle 11px at 100% 64px, transparent 11px, #000 11.5px);
+  transform:translateY(0) scale(1);
+  transition:transform .18s cubic-bezier(.22,1,.36,1);
+  overflow:hidden;
+  isolation:isolate;
+}
+.ticket::before{
+  /* sheen sottile per dare profondità senza essere un gradiente da stock */
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(155deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 42%);
+  pointer-events:none;
+}
+.ticket:active{ transform:scale(.97); }
+.ticket .row1{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.ticket .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+.ticket .logo-chip{
+  width:40px; height:40px; border-radius:12px; background:rgba(255,255,255,0.22);
+  display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+  backdrop-filter:blur(6px);
+}
+.ticket .names{ min-width:0; }
+.ticket .card-name{ font-family:'Sora',sans-serif; font-weight:700; font-size:16.5px; line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ticket .store-name{ font-size:12.5px; opacity:.82; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.ticket .type-tag{
+  font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  background:rgba(255,255,255,0.22); padding:5px 9px; border-radius:8px; flex-shrink:0; backdrop-filter:blur(6px);
+}
+.ticket .perforation{
+  margin:14px 0 10px; height:0; border-top:2px dashed rgba(255,255,255,0.34);
+}
+.ticket .row2{ display:flex; align-items:center; justify-content:space-between; }
+.ticket .code-preview{
+  font-family:'Sora',sans-serif; font-weight:600; font-size:13.5px; letter-spacing:.09em; opacity:.92;
+}
+.ticket .chev{ opacity:.75; width:18px; height:18px; }
+
+/* Add button (Home) */
+.fab-add{
+  margin:2px 16px 4px; display:flex; align-items:center; justify-content:center; gap:9px;
+  padding:15px; border-radius:18px; border:1.5px dashed var(--line-strong);
+  background:transparent; color:var(--ink-dim); font-weight:600; font-size:14.5px;
+  cursor:pointer; transition:border-color .15s, color .15s, background .15s;
+}
+.fab-add:active{ transform:scale(.98); }
+.fab-add svg{ width:18px; height:18px; }
+.fab-add.top{ background:var(--surface); border-style:solid; border-color:var(--line); color:var(--ink); margin-top:10px;}
+
+/* ---------------- Bottom navigation ---------------- */
+.bottom-nav{
+  position:absolute; left:0; right:0; bottom:0;
+  padding: 10px 18px calc(12px + var(--safe-bottom));
+  display:flex; gap:6px;
+  background:linear-gradient(to top, var(--bg) 60%, transparent);
+  z-index:20;
+}
+.nav-track{
+  flex:1; display:flex; background:var(--surface); border:1px solid var(--line);
+  border-radius:20px; padding:6px; box-shadow:var(--shadow-pop);
+}
+.nav-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:9px 4px 8px; border-radius:14px; border:none; background:transparent;
+  color:var(--ink-faint); cursor:pointer; transition:background .18s, color .18s;
+}
+.nav-item svg{ width:21px; height:21px; }
+.nav-item span{ font-size:10.5px; font-weight:600; }
+.nav-item.active{ color:var(--accent); background:var(--accent-dim); }
+.nav-item .fab-center{
+  width:46px; height:46px; margin-top:-20px; border-radius:16px; background:var(--accent);
+  display:flex; align-items:center; justify-content:center; color:var(--accent-ink);
+  box-shadow:0 10px 20px -6px rgba(242,184,75,0.55);
+}
+.nav-item .fab-center svg{ width:22px; height:22px; }
+
+/* ---------------- Buttons ---------------- */
+.btn{
+  border:none; border-radius:16px; padding:15px 18px; font-weight:700; font-size:15px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .12s, opacity .15s; width:100%;
+}
+.btn:active{ transform:scale(.98); }
+.btn-primary{ background:var(--accent); color:var(--accent-ink); }
+.btn-secondary{ background:var(--surface-2); color:var(--ink); border:1px solid var(--line); }
+.btn-ghost{ background:transparent; color:var(--ink-dim); }
+.btn-danger{ background:transparent; color:var(--danger); border:1px solid rgba(224,101,79,0.35); }
+.btn[disabled]{ opacity:.45; pointer-events:none; }
+.btn.small{ padding:11px 14px; font-size:13.5px; width:auto; }
+
+/* ---------------- Segmented control ---------------- */
+.segmented{
+  display:flex; background:var(--surface-2); border-radius:16px; padding:4px; margin:0 16px 18px;
+}
+.segmented button{
+  flex:1; border:none; background:transparent; padding:11px 6px; border-radius:12px;
+  font-weight:600; font-size:13.5px; color:var(--ink-dim); cursor:pointer; transition:background .18s,color .18s;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.segmented button svg{ width:15px; height:15px; }
+.segmented button.active{ background:var(--surface); color:var(--ink); box-shadow:var(--shadow-pop); }
+
+/* ---------------- Forms ---------------- */
+.form-section{ padding:0 16px; display:flex; flex-direction:column; gap:16px; }
+.field label{ display:block; font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--ink-dim); margin-bottom:7px; text-transform:uppercase;}
+.field input[type=text], .field select, .field textarea{
+  width:100%; background:var(--surface); border:1.5px solid var(--line); color:var(--ink);
+  border-radius:14px; padding:13px 14px; font-size:15.5px; font-family:inherit; outline:none;
+  transition:border-color .15s; appearance:none;
+}
+.field textarea{ resize:none; }
+.field input:focus, .field select:focus{ border-color:var(--accent); }
+.field-help{ font-size:12px; color:var(--ink-faint); margin-top:6px; }
+.select-wrap{ position:relative; }
+.select-wrap::after{
+  content:''; position:absolute; right:16px; top:50%; width:9px; height:9px; pointer-events:none;
+  border-right:2px solid var(--ink-faint); border-bottom:2px solid var(--ink-faint);
+  transform:translateY(-70%) rotate(45deg);
+}
+
+.color-grid{ display:flex; flex-wrap:wrap; gap:10px; }
+.swatch{
+  width:38px; height:38px; border-radius:12px; cursor:pointer; position:relative; flex-shrink:0;
+  border:2px solid transparent; transition:transform .12s;
+}
+.swatch.selected{ border-color:var(--ink); transform:scale(1.08); }
+.swatch.selected::after{
+  content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  color:#fff; font-weight:800; font-size:14px; text-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+.swatch.custom-swatch{ background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red); display:flex; align-items:center; justify-content:center; }
+.swatch input[type=color]{ opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer; border:none; padding:0;}
+
+.emoji-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+.emoji-btn{
+  width:42px; height:42px; border-radius:12px; background:var(--surface); border:1.5px solid var(--line);
+  font-size:19px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.emoji-btn.selected{ border-color:var(--accent); background:var(--accent-dim); }
+
+.card-preview-wrap{ padding:0 16px; margin-bottom:4px; }
+.card-preview-label{ font-size:12px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px;}
+
+/* ---------------- Scanner ---------------- */
+.scanner-wrap{ padding:0 16px; display:flex; flex-direction:column; gap:16px; }
+.scanner-viewport{
+  position:relative; width:100%; aspect-ratio:3/4; max-height:52vh; border-radius:24px; overflow:hidden;
+  background:#000; box-shadow:var(--shadow-card);
+}
+.scanner-viewport video{ width:100%; height:100%; object-fit:cover; display:block; }
+.scan-frame{
+  position:absolute; inset:14%; border:2.5px solid rgba(255,255,255,.85); border-radius:20px;
+  box-shadow:0 0 0 999px rgba(0,0,0,.32);
+}
+.scan-frame::before, .scan-frame::after{ content:''; position:absolute; width:26px; height:26px; border-color:var(--accent); }
+.scan-line{
+  position:absolute; left:14%; right:14%; height:2px; background:var(--accent); top:14%;
+  box-shadow:0 0 12px 2px var(--accent); animation:scanmove 2.1s ease-in-out infinite;
+}
+@keyframes scanmove{ 0%,100%{ top:14%; } 50%{ top:84%; } }
+.scanner-status{
+  text-align:center; font-size:13.5px; color:var(--ink-dim); min-height:18px;
+}
+.scan-result-card{
+  background:var(--surface); border:1.5px solid var(--success); border-radius:18px; padding:16px;
+  display:flex; align-items:center; gap:12px;
+}
+.scan-result-card .check{
+  width:38px; height:38px; border-radius:12px; background:rgba(127,191,143,0.18); color:var(--success);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.scan-result-card .check svg{ width:19px; height:19px; }
+.scan-result-card .meta{ min-width:0; }
+.scan-result-card .meta .t1{ font-weight:700; font-size:13.5px; color:var(--success); margin-bottom:2px;}
+.scan-result-card .meta .t2{ font-size:13px; color:var(--ink-dim); word-break:break-all; }
+.scanner-fallback{
+  background:var(--surface-2); border-radius:16px; padding:16px; font-size:13.5px; color:var(--ink-dim); line-height:1.5;
+}
+
+/* ---------------- Detail (full screen code) ---------------- */
+.detail-screen{ background:var(--bg); }
+.detail-top{
+  padding: calc(16px + var(--safe-top)) 16px 6px; display:flex; align-items:center; justify-content:space-between;
+}
+.detail-body{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:6px 22px 30px; overflow-y:auto; }
+.detail-hero{
+  width:100%; border-radius:22px; padding:20px 22px; color:#fff; margin-bottom:22px; box-shadow:var(--shadow-card);
+  display:flex; align-items:center; gap:14px;
+}
+.detail-hero .logo-chip{ width:48px; height:48px; border-radius:14px; background:rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;}
+.detail-hero h2{ margin:0; font-size:19px; font-weight:700; }
+.detail-hero p{ margin:2px 0 0; font-size:13px; opacity:.85; }
+.code-panel{
+  background:#ffffff; border-radius:24px; padding:24px 18px 20px; width:100%;
+  display:flex; flex-direction:column; align-items:center; box-shadow:var(--shadow-card);
+}
+.code-panel canvas{ max-width:100%; height:auto; }
+.code-number{
+  margin-top:14px; font-family:'Sora',sans-serif; font-weight:700; font-size:17px; letter-spacing:.08em;
+  color:#17171a; word-break:break-all; text-align:center;
+}
+.code-type-label{ margin-top:16px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+.detail-actions{ display:flex; gap:10px; width:100%; margin-top:24px; }
+
+/* ---------------- Sheet (edit / confirm delete) ---------------- */
+.sheet-backdrop{
+  position:absolute; inset:0; background:rgba(0,0,0,0.5); opacity:0; pointer-events:none; transition:opacity .22s; z-index:30;
+}
+.sheet-backdrop.active{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:absolute; left:0; right:0; bottom:0; background:var(--surface); border-radius:26px 26px 0 0;
+  padding:10px 20px calc(22px + var(--safe-bottom)); box-shadow:0 -12px 40px rgba(0,0,0,.3);
+  transform:translateY(100%); transition:transform .3s cubic-bezier(.22,1,.36,1); z-index:31;
+  max-height:88vh; overflow-y:auto;
+}
+.sheet.active{ transform:translateY(0); }
+.sheet .handle{ width:38px; height:4px; border-radius:2px; background:var(--line-strong); margin:8px auto 16px; }
+.sheet h3{ margin:0 0 4px; font-size:18px; }
+.sheet p.desc{ font-size:14px; color:var(--ink-dim); margin:0 0 20px; line-height:1.5; }
+.sheet-actions{ display:flex; gap:10px; margin-top:6px; }
+.menu-sheet-item{
+  display:flex; align-items:center; gap:12px; padding:14px 4px; width:100%; background:none; border:none;
+  color:var(--ink); font-size:15px; font-weight:600; cursor:pointer; border-bottom:1px solid var(--line); text-align:left;
+}
+.menu-sheet-item:last-child{ border-bottom:none; }
+.menu-sheet-item svg{ width:19px; height:19px; color:var(--ink-dim); flex-shrink:0; }
+.menu-sheet-item.danger{ color:var(--danger); }
+.menu-sheet-item.danger svg{ color:var(--danger); }
+
+/* ---------------- Toast ---------------- */
+.toast{
+  position:absolute; left:20px; right:20px; bottom:calc(96px + var(--safe-bottom)); z-index:60;
+  background:var(--surface-3); color:var(--ink); padding:13px 16px; border-radius:16px;
+  font-size:13.5px; font-weight:600; text-align:center; box-shadow:var(--shadow-pop);
+  opacity:0; transform:translateY(10px); pointer-events:none; transition:opacity .25s, transform .25s;
+}
+.toast.show{ opacity:1; transform:translateY(0); }
+
+/* ---------------- Settings ---------------- */
+.settings-group{ margin:0 16px 22px; }
+.settings-group h4{
+  font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin:0 0 10px 6px;
+}
+.settings-card{ background:var(--surface); border:1px solid var(--line); border-radius:18px; overflow:hidden; }
+.settings-row{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 16px;
+  border-bottom:1px solid var(--line);
+}
+.settings-row:last-child{ border-bottom:none; }
+.settings-row .label{ font-size:14.5px; font-weight:600; }
+.settings-row .sub{ font-size:12px; color:var(--ink-faint); margin-top:2px; }
+.theme-picker{ display:flex; gap:6px; background:var(--surface-2); border-radius:12px; padding:4px; }
+.theme-picker button{
+  border:none; background:transparent; padding:8px 12px; border-radius:9px; font-size:12.5px; font-weight:600;
+  color:var(--ink-dim); cursor:pointer;
+}
+.theme-picker button.active{ background:var(--surface); color:var(--ink); }
+.privacy-note{
+  margin:4px 16px 24px; padding:15px 16px; background:var(--accent-dim); border-radius:16px; font-size:13px;
+  line-height:1.55; color:var(--ink); display:flex; gap:10px; align-items:flex-start;
+}
+.privacy-note svg{ width:18px; height:18px; flex-shrink:0; margin-top:1px; color:var(--accent); }
+.about-block{ margin:6px 16px 30px; text-align:center; color:var(--ink-faint); font-size:12px; line-height:1.6; }
+
+/* file input trick for import */
+.file-input-hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <section class="screen active" id="screen-home">
+    <div class="topbar">
+      <div>
+        <p class="eyebrow">Wallet</p>
+        <h1>Le tue carte</h1>
+      </div>
+      <button class="icon-btn" data-nav="settings" aria-label="Impostazioni">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H4a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H10a1.65 1.65 0 001-1.51V4a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V10a1.65 1.65 0 001.51 1H20a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+    </div>
+    <div class="scroll-body" id="home-scroll"></div>
+  </section>
+
+  <!-- ============ AGGIUNGI ============ -->
+  <section class="screen" id="screen-add">
+    <div class="topbar">
+      <div>
+        <p class="eyebrow" id="add-eyebrow">Nuova tessera</p>
+        <h1 id="add-title">Aggiungi carta</h1>
+      </div>
+      <button class="icon-btn" data-nav="home" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="segmented" id="add-segmented">
+      <button class="active" data-mode="scan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8V5a1 1 0 011-1h3M20 8V5a1 1 0 00-1-1h-3M4 16v3a1 1 0 001 1h3M20 16v3a1 1 0 01-1 1h-3"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        Scansiona
+      </button>
+      <button data-mode="manual">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+        Manuale
+      </button>
+    </div>
+    <div class="scroll-body">
+      <!-- Scanner mode -->
+      <div id="panel-scan" class="scanner-wrap">
+        <div class="scanner-viewport" id="scanner-viewport">
+          <video id="scanner-video" playsinline muted autoplay></video>
+          <div class="scan-frame"></div>
+          <div class="scan-line"></div>
+        </div>
+        <p class="scanner-status" id="scanner-status">Inquadra il codice a barre o QR della tessera</p>
+        <div id="scan-result-slot"></div>
+        <div id="scanner-fallback-slot"></div>
+      </div>
+      <!-- Manual mode -->
+      <div id="panel-manual" style="display:none;">
+        <div class="card-preview-wrap">
+          <p class="card-preview-label">Anteprima</p>
+          <div id="manual-preview"></div>
+        </div>
+        <form id="manual-form" class="form-section" style="margin-top:18px;">
+          <div class="field">
+            <label for="f-cardname">Nome della carta</label>
+            <input type="text" id="f-cardname" placeholder="Es. Fidaty Card" required>
+          </div>
+          <div class="field">
+            <label for="f-storename">Negozio</label>
+            <input type="text" id="f-storename" placeholder="Es. Esselunga" required>
+          </div>
+          <div class="field">
+            <label for="f-codetype">Tipo di codice</label>
+            <div class="select-wrap">
+              <select id="f-codetype">
+                <option value="qrcode">QR Code</option>
+                <option value="ean13">EAN-13</option>
+                <option value="ean8">EAN-8</option>
+                <option value="code128">Code 128</option>
+                <option value="code39">Code 39</option>
+                <option value="upca">UPC-A</option>
+                <option value="upce">UPC-E</option>
+                <option value="pdf417">PDF417</option>
+                <option value="datamatrix">Data Matrix</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-code">Codice della carta</label>
+            <input type="text" id="f-code" placeholder="Numero o testo del codice" required>
+            <p class="field-help" id="code-help"></p>
+          </div>
+          <div class="field">
+            <label>Colore</label>
+            <div class="color-grid" id="color-grid"></div>
+          </div>
+          <div class="field">
+            <label>Logo / emoji</label>
+            <div class="emoji-grid" id="emoji-grid"></div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:6px;">Salva carta</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="screen" id="screen-settings">
+    <div class="topbar">
+      <div>
+        <p class="eyebrow">Wallet</p>
+        <h1>Impostazioni</h1>
+      </div>
+      <button class="icon-btn" data-nav="home" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="scroll-body no-nav-pad">
+      <div class="settings-group">
+        <h4>Aspetto</h4>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div>
+              <div class="label">Tema</div>
+              <div class="sub">Scegli l'aspetto dell'app</div>
+            </div>
+            <div class="theme-picker" id="theme-picker">
+              <button data-theme="system">Auto</button>
+              <button data-theme="light">Chiaro</button>
+              <button data-theme="dark">Scuro</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h4>Dati</h4>
+        <div class="settings-card">
+          <button class="settings-row" id="btn-export" style="width:100%; background:none; border:none; cursor:pointer;">
+            <div style="text-align:left;">
+              <div class="label">Esporta carte</div>
+              <div class="sub">Scarica un backup in formato JSON</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-faint); flex-shrink:0;"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+          </button>
+          <button class="settings-row" id="btn-import" style="width:100%; background:none; border:none; cursor:pointer;">
+            <div style="text-align:left;">
+              <div class="label">Importa carte</div>
+              <div class="sub">Ripristina da un file JSON</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-faint); flex-shrink:0;"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>
+          </button>
+          <input type="file" id="import-file" class="file-input-hidden" accept="application/json">
+          <button class="settings-row" id="btn-delete-all" style="width:100%; background:none; border:none; cursor:pointer;">
+            <div style="text-align:left;">
+              <div class="label" style="color:var(--danger);">Elimina tutte le carte</div>
+              <div class="sub">Azione irreversibile</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--danger); flex-shrink:0;"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="privacy-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>
+        <span>Le tue carte vengono salvate esclusivamente sul dispositivo. Non utilizziamo server o database.</span>
+      </div>
+
+      <div class="about-block">
+        Wallet · Carte Fedeltà<br>
+        Nessun account, nessun server. I dati vivono solo qui.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DETTAGLIO CARTA (fullscreen) ============ -->
+  <section class="screen detail-screen" id="screen-detail">
+    <div class="detail-top">
+      <button class="icon-btn" data-nav="home" aria-label="Indietro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="icon-btn" id="detail-menu-btn" aria-label="Altre opzioni">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg>
+      </button>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </section>
+
+  <!-- ============ BOTTOM NAV ============ -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="nav-track">
+      <button class="nav-item active" data-nav="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" data-nav="add">
+        <span class="fab-center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        </span>
+      </button>
+      <button class="nav-item" data-nav="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H4a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H10a1.65 1.65 0 001-1.51V4a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V10a1.65 1.65 0 001.51 1H20a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Impostazioni</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ============ SHEETS & TOAST ============ -->
+  <div class="sheet-backdrop" id="sheet-backdrop"></div>
+
+  <div class="sheet" id="sheet-detail-menu">
+    <div class="handle"></div>
+    <button class="menu-sheet-item" id="menu-edit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Modifica carta
+    </button>
+    <button class="menu-sheet-item danger" id="menu-delete">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg>
+      Elimina carta
+    </button>
+  </div>
+
+  <div class="sheet" id="sheet-confirm-delete">
+    <div class="handle"></div>
+    <h3 id="confirm-delete-title">Eliminare questa carta?</h3>
+    <p class="desc">L'azione non può essere annullata. La tessera verrà rimossa definitivamente dal tuo wallet.</p>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="confirm-delete-cancel">Annulla</button>
+      <button class="btn btn-danger" id="confirm-delete-ok" style="background:var(--danger); color:#fff; border:none;">Elimina</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="sheet-confirm-wipe">
+    <div class="handle"></div>
+    <h3>Eliminare tutte le carte?</h3>
+    <p class="desc">Verranno rimosse definitivamente tutte le tessere salvate su questo dispositivo.</p>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="confirm-wipe-cancel">Annulla</button>
+      <button class="btn" id="confirm-wipe-ok" style="background:var(--danger); color:#fff;">Elimina tutto</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===========================================================
+   STORAGE — unica fonte di persistenza: localStorage
+   =========================================================== */
+const STORAGE_KEY = "wallet_cards";
+const SETTINGS_KEY = "wallet_settings";
+
+function loadCards(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    console.error("Errore lettura wallet_cards:", e);
+    return [];
+  }
+}
+function saveCards(cards){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    return true;
+  }catch(e){
+    console.error("Errore salvataggio wallet_cards:", e);
+    showToast("Spazio esaurito: impossibile salvare");
+    return false;
+  }
+}
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    return raw ? JSON.parse(raw) : { theme: "system" };
+  }catch(e){ return { theme: "system" }; }
+}
+function saveSettings(s){
+  try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }catch(e){ console.error(e); }
+}
+
+let state = {
+  cards: loadCards(),
+  settings: loadSettings(),
+  currentScreen: "home",
+  editingId: null,      // carta in modifica (null = nuova)
+  activeDetailId: null,
+  addMode: "scan",
+  scanStream: null,
+  scanRAF: null,
+  scanDetector: null,
+  scannedPayload: null,
+  selectedColor: null,
+  selectedEmoji: "💳"
+};
+
+/* ===========================================================
+   COSTANTI DI SUPPORTO
+   =========================================================== */
+const CODE_TYPE_LABEL = {
+  qrcode:"QR Code", ean13:"EAN-13", ean8:"EAN-8", code128:"Code 128",
+  code39:"Code 39", upca:"UPC-A", upce:"UPC-E", pdf417:"PDF417", datamatrix:"Data Matrix"
+};
+// mappa formato interno -> BCID richiesto da bwip-js
+const BWIP_MAP = {
+  qrcode:"qrcode", ean13:"ean13", ean8:"ean8", code128:"code128",
+  code39:"code39", upca:"upca", upce:"upce", pdf417:"pdf417", datamatrix:"datamatrix"
+};
+// mappa formato interno -> formato riportato da BarcodeDetector
+const DETECTOR_FORMAT_MAP = {
+  "qr_code":"qrcode", "ean_13":"ean13", "ean_8":"ean8", "code_128":"code128",
+  "code_39":"code39", "upc_a":"upca", "upc_e":"upce", "pdf417":"pdf417", "data_matrix":"datamatrix"
+};
+
+const PRESET_COLORS = [
+  ["#2e7d46","#1c5c30"], // verde (Esselunga-style)
+  ["#e0364f","#a8203a"], // rosso (Coop/Conad-style)
+  ["#2f6fed","#1d4fb8"], // blu (Decathlon-style)
+  ["#f2b84b","#c4881f"], // ambra/oro
+  ["#0b5fa5","#083f6e"], // blu scuro (Ikea-style)
+  ["#6a4fd6","#4a34a3"], // viola
+  ["#1a1a1e","#000000"], // nero
+  ["#e07a2f","#b05a1c"], // arancio
+  ["#2ba89a","#1c7d72"], // teal (palestra)
+  ["#8a8f98","#5c6067"]  // grigio
+];
+const EMOJI_SET = ["💳","🛍️","🏬","🏋️","🍕","☕","🎬","💊","🚗","✈️","🐾","🎮","👟","💇","🧾","⭐"];
+
+function uid(){ return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+/* ===========================================================
+   THEME
+   =========================================================== */
+const themeMeta = document.getElementById('theme-color-meta');
+function applyTheme(){
+  const t = state.settings.theme || "system";
+  let effective = t;
+  if(t === "system"){
+    effective = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? "light" : "dark";
+  }
+  document.documentElement.setAttribute('data-theme', effective);
+  themeMeta.setAttribute('content', effective === 'light' ? '#faf8f5' : '#121214');
+  document.querySelectorAll('#theme-picker button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.theme === t);
+  });
+}
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', ()=>{
+    if(state.settings.theme === 'system') applyTheme();
+  });
+}
+
+/* ===========================================================
+   TOAST
+   =========================================================== */
+let toastTimer = null;
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 2200);
+}
+
+/* ===========================================================
+   NAVIGAZIONE SCHERMATE
+   =========================================================== */
+function goTo(screenName){
+  if(screenName === state.currentScreen && screenName !== 'add') { /* consenti re-render add */ }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + screenName).classList.add('active');
+  state.currentScreen = screenName;
+
+  document.getElementById('bottom-nav').style.display = (screenName === 'detail') ? 'none' : 'flex';
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.nav === screenName);
+  });
+
+  if(screenName === 'home') renderHome();
+  if(screenName === 'add'){ resetAddForm(); startScanMode(); }
+  else { stopScanner(); }
+  if(screenName === 'settings') renderSettings();
+}
+
+document.querySelectorAll('[data-nav]').forEach(btn=>{
+  btn.addEventListener('click', ()=> goTo(btn.dataset.nav));
+});
+
+/* ===========================================================
+   HOME — elenco carte
+   =========================================================== */
+function cardGradientCSS(card){
+  const c1 = card.color1 || "#2f6fed", c2 = card.color2 || "#1d4fb8";
+  return `linear-gradient(135deg, ${c1}, ${c2})`;
+}
+
+function renderTicket(card){
+  const div = document.createElement('div');
+  div.className = 'ticket';
+  div.style.background = cardGradientCSS(card);
+  const preview = (card.code || "").slice(-6);
+  div.innerHTML = `
+    <div class="row1">
+      <div class="brand">
+        <div class="logo-chip">${escapeHTML(card.emoji || '💳')}</div>
+        <div class="names">
+          <div class="card-name">${escapeHTML(card.name)}</div>
+          <div class="store-name">${escapeHTML(card.store)}</div>
+        </div>
+      </div>
+      <div class="type-tag">${CODE_TYPE_LABEL[card.codeType] || card.codeType}</div>
+    </div>
+    <div class="perforation"></div>
+    <div class="row2">
+      <div class="code-preview">${preview ? '•••• ' + escapeHTML(preview) : '\u00A0'}</div>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
+    </div>
+  `;
+  div.addEventListener('click', ()=> openDetail(card.id));
+  return div;
+}
+
+function renderHome(){
+  const root = document.getElementById('home-scroll');
+  root.innerHTML = "";
+  if(state.cards.length === 0){
+    root.innerHTML = `
+      <div class="empty-state">
+        <div class="glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="13" rx="3"/><path d="M2 10h20"/></svg>
+        </div>
+        <h3>Il tuo wallet è vuoto</h3>
+        <p>Aggiungi la prima tessera fedeltà scansionandola oppure inserendola a mano.</p>
+      </div>
+    `;
+    const addBtn = document.createElement('button');
+    addBtn.className = 'fab-add top';
+    addBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Aggiungi carta`;
+    addBtn.style.margin = "0 28px";
+    addBtn.addEventListener('click', ()=> goTo('add'));
+    root.querySelector('.empty-state').after(addBtn);
+    return;
+  }
+  const list = document.createElement('div');
+  list.className = 'card-list';
+  state.cards
+    .slice()
+    .sort((a,b)=> (a.order ?? 0) - (b.order ?? 0))
+    .forEach(card => list.appendChild(renderTicket(card)));
+  root.appendChild(list);
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'fab-add';
+  addBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Aggiungi carta`;
+  addBtn.style.margin = "16px 16px 4px";
+  addBtn.addEventListener('click', ()=> goTo('add'));
+  root.appendChild(addBtn);
+}
+
+function escapeHTML(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? "" : String(str);
+  return d.innerHTML;
+}
+
+/* ===========================================================
+   AGGIUNGI — segmented control scan/manuale
+   =========================================================== */
+const segButtons = document.querySelectorAll('#add-segmented button');
+segButtons.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    segButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.addMode = btn.dataset.mode;
+    document.getElementById('panel-scan').style.display = state.addMode === 'scan' ? 'flex' : 'none';
+    document.getElementById('panel-manual').style.display = state.addMode === 'manual' ? 'block' : 'none';
+    if(state.addMode === 'scan') startScanMode(); else stopScanner();
+  });
+});
+
+function resetAddForm(){
+  state.editingId = null;
+  state.scannedPayload = null;
+  state.selectedColor = PRESET_COLORS[Math.floor(Math.random()*PRESET_COLORS.length)];
+  state.selectedEmoji = "💳";
+  document.getElementById('add-title').textContent = "Aggiungi carta";
+  document.getElementById('add-eyebrow').textContent = "Nuova tessera";
+  document.getElementById('f-cardname').value = "";
+  document.getElementById('f-storename').value = "";
+  document.getElementById('f-code').value = "";
+  document.getElementById('f-codetype').value = "qrcode";
+  document.getElementById('scan-result-slot').innerHTML = "";
+  segButtons.forEach(b=> b.classList.toggle('active', b.dataset.mode === 'scan'));
+  state.addMode = 'scan';
+  document.getElementById('panel-scan').style.display = 'flex';
+  document.getElementById('panel-manual').style.display = 'none';
+  buildColorGrid();
+  buildEmojiGrid();
+  updateCodeHelp();
+  updateManualPreview();
+}
+
+function buildColorGrid(){
+  const grid = document.getElementById('color-grid');
+  grid.innerHTML = "";
+  PRESET_COLORS.forEach(pair=>{
+    const sw = document.createElement('div');
+    sw.className = 'swatch';
+    sw.style.background = `linear-gradient(135deg, ${pair[0]}, ${pair[1]})`;
+    if(state.selectedColor && state.selectedColor[0] === pair[0]) sw.classList.add('selected');
+    sw.addEventListener('click', ()=>{
+      state.selectedColor = pair;
+      buildColorGrid();
+      updateManualPreview();
+    });
+    grid.appendChild(sw);
+  });
+  // selettore colore personalizzato
+  const custom = document.createElement('div');
+  custom.className = 'swatch custom-swatch';
+  custom.title = "Colore personalizzato";
+  custom.innerHTML = `<span style="font-size:14px;">🎨</span><input type="color" id="custom-color-input">`;
+  grid.appendChild(custom);
+  document.getElementById('custom-color-input').addEventListener('input', (e)=>{
+    const hex = e.target.value;
+    state.selectedColor = [hex, shadeColor(hex, -20)];
+    buildColorGrid();
+    updateManualPreview();
+  });
+}
+function shadeColor(hex, percent){
+  const num = parseInt(hex.replace('#',''),16);
+  let r = (num >> 16) + Math.round(255 * (percent/100));
+  let g = ((num >> 8) & 0x00FF) + Math.round(255 * (percent/100));
+  let b = (num & 0x0000FF) + Math.round(255 * (percent/100));
+  r = Math.max(0, Math.min(255,r)); g = Math.max(0, Math.min(255,g)); b = Math.max(0, Math.min(255,b));
+  return "#" + (0x1000000 + r*0x10000 + g*0x100 + b).toString(16).slice(1);
+}
+
+function buildEmojiGrid(){
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = "";
+  EMOJI_SET.forEach(em=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'emoji-btn' + (state.selectedEmoji === em ? ' selected' : '');
+    b.textContent = em;
+    b.addEventListener('click', ()=>{
+      state.selectedEmoji = em;
+      buildEmojiGrid();
+      updateManualPreview();
+    });
+    grid.appendChild(b);
+  });
+}
+
+function updateCodeHelp(){
+  const t = document.getElementById('f-codetype').value;
+  const help = {
+    qrcode:"Qualsiasi testo o numero.",
+    ean13:"13 cifre numeriche.",
+    ean8:"8 cifre numeriche.",
+    code128:"Testo o numeri, qualsiasi lunghezza.",
+    code39:"Lettere maiuscole, numeri e simboli base.",
+    upca:"12 cifre numeriche.",
+    upce:"6-8 cifre numeriche.",
+    pdf417:"Testo o numeri, anche lunghi.",
+    datamatrix:"Testo o numeri."
+  };
+  document.getElementById('code-help').textContent = help[t] || "";
+}
+document.getElementById('f-codetype').addEventListener('change', ()=>{ updateCodeHelp(); updateManualPreview(); });
+document.getElementById('f-code').addEventListener('input', updateManualPreview);
+document.getElementById('f-cardname').addEventListener('input', updateManualPreview);
+document.getElementById('f-storename').addEventListener('input', updateManualPreview);
+
+function updateManualPreview(){
+  const wrap = document.getElementById('manual-preview');
+  const name = document.getElementById('f-cardname').value || "Nome carta";
+  const store = document.getElementById('f-storename').value || "Negozio";
+  const codeType = document.getElementById('f-codetype').value;
+  const code = document.getElementById('f-code').value;
+  const fakeCard = {
+    name, store, codeType, code,
+    emoji: state.selectedEmoji,
+    color1: state.selectedColor ? state.selectedColor[0] : "#2f6fed",
+    color2: state.selectedColor ? state.selectedColor[1] : "#1d4fb8"
+  };
+  wrap.innerHTML = "";
+  wrap.appendChild(renderTicket(fakeCard));
+  wrap.querySelector('.ticket').style.cursor = 'default';
+  wrap.querySelector('.ticket').replaceWith(wrap.querySelector('.ticket').cloneNode(true)); // rimuove il click handler nella preview
+}
+
+/* ===========================================================
+   SALVATAGGIO FORM MANUALE
+   =========================================================== */
+document.getElementById('manual-form').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('f-cardname').value.trim();
+  const store = document.getElementById('f-storename').value.trim();
+  const codeType = document.getElementById('f-codetype').value;
+  const code = document.getElementById('f-code').value.trim();
+
+  if(!name || !store || !code){
+    showToast("Compila tutti i campi obbligatori");
+    return;
+  }
+
+  const color = state.selectedColor || PRESET_COLORS[3];
+
+  if(state.editingId){
+    const idx = state.cards.findIndex(c => c.id === state.editingId);
+    if(idx > -1){
+      state.cards[idx] = {
+        ...state.cards[idx],
+        name, store, codeType, code,
+        emoji: state.selectedEmoji,
+        color1: color[0], color2: color[1]
+      };
+    }
+    saveCards(state.cards);
+    showToast("Carta aggiornata");
+    goTo('detail');
+    openDetail(state.editingId);
+  }else{
+    const newCard = {
+      id: uid(),
+      name, store, codeType, code,
+      emoji: state.selectedEmoji,
+      color1: color[0], color2: color[1],
+      order: state.cards.length,
+      createdAt: Date.now()
+    };
+    state.cards.push(newCard);
+    saveCards(state.cards);
+    showToast("Carta salvata nel wallet");
+    goTo('home');
+  }
+});
+
+/* ===========================================================
+   SCANNER FOTOCAMERA
+   BarcodeDetector nativo quando disponibile (copre QR + tutti
+   i formati barcode principali). Fallback dichiarato se il
+   browser non lo supporta: si passa all'inserimento manuale.
+   =========================================================== */
+async function startScanMode(){
+  if(state.currentScreen !== 'add' || state.addMode !== 'scan') return;
+  const statusEl = document.getElementById('scanner-status');
+  const fallbackSlot = document.getElementById('scanner-fallback-slot');
+  const resultSlot = document.getElementById('scan-result-slot');
+  resultSlot.innerHTML = "";
+  fallbackSlot.innerHTML = "";
+  state.scannedPayload = null;
+
+  if(!('BarcodeDetector' in window)){
+    statusEl.textContent = "";
+    fallbackSlot.innerHTML = `
+      <div class="scanner-fallback">
+        Il tuo browser non supporta la scansione automatica dei codici a barre.
+        Usa la scheda <strong>Manuale</strong> per inserire il codice a mano.
+      </div>`;
+    document.getElementById('scanner-viewport').style.display = 'none';
+    return;
+  }
+  document.getElementById('scanner-viewport').style.display = 'block';
+
+  try{
+    const formats = await BarcodeDetector.getSupportedFormats();
+    const wanted = ['qr_code','ean_13','ean_8','code_128','code_39','upc_a','upc_e','pdf417','data_matrix'].filter(f=>formats.includes(f));
+    state.scanDetector = new BarcodeDetector({ formats: wanted.length ? wanted : formats });
+  }catch(e){
+    console.error("BarcodeDetector init error:", e);
+    fallbackSlot.innerHTML = `<div class="scanner-fallback">Impossibile inizializzare lo scanner su questo browser. Usa l'inserimento manuale.</div>`;
+    return;
+  }
+
+  try{
+    statusEl.textContent = "Richiesta autorizzazione fotocamera…";
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } }, audio: false
+    });
+    state.scanStream = stream;
+    const video = document.getElementById('scanner-video');
+    video.srcObject = stream;
+    await video.play();
+    statusEl.textContent = "Inquadra il codice a barre o QR della tessera";
+    scanLoop();
+  }catch(err){
+    console.error("Errore accesso fotocamera:", err);
+    statusEl.textContent = "";
+    fallbackSlot.innerHTML = `
+      <div class="scanner-fallback">
+        Non è stato possibile accedere alla fotocamera (permesso negato o non disponibile).
+        Puoi comunque aggiungere la carta dalla scheda <strong>Manuale</strong>.
+      </div>`;
+  }
+}
+
+function scanLoop(){
+  if(state.currentScreen !== 'add' || state.addMode !== 'scan' || !state.scanStream) return;
+  const video = document.getElementById('scanner-video');
+  if(video.readyState >= 2 && state.scanDetector){
+    state.scanDetector.detect(video).then(codes=>{
+      if(codes && codes.length > 0 && !state.scannedPayload){
+        handleScanResult(codes[0]);
+      }
+    }).catch(()=>{ /* frame non leggibile, si riprova al prossimo giro */ });
+  }
+  state.scanRAF = requestAnimationFrame(scanLoop);
+}
+
+function handleScanResult(detected){
+  const internalFormat = DETECTOR_FORMAT_MAP[detected.format] || 'qrcode';
+  state.scannedPayload = { code: detected.rawValue, codeType: internalFormat };
+  document.getElementById('scanner-status').textContent = "";
+  const slot = document.getElementById('scan-result-slot');
+  slot.innerHTML = `
+    <div class="scan-result-card">
+      <div class="check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div class="meta">
+        <div class="t1">Codice rilevato ✓ — ${CODE_TYPE_LABEL[internalFormat] || internalFormat}</div>
+        <div class="t2">${escapeHTML(detected.rawValue)}</div>
+      </div>
+    </div>
+  `;
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-primary';
+  btn.style.marginTop = '14px';
+  btn.textContent = 'Usa questo codice';
+  btn.addEventListener('click', ()=>{
+    stopScanner();
+    // passa alla scheda manuale con i campi precompilati
+    document.querySelector('#add-segmented button[data-mode="manual"]').click();
+    document.getElementById('f-codetype').value = state.scannedPayload.codeType;
+    document.getElementById('f-code').value = state.scannedPayload.code;
+    updateCodeHelp();
+    updateManualPreview();
+    document.getElementById('f-cardname').focus();
+  });
+  slot.appendChild(btn);
+
+  const rescanBtn = document.createElement('button');
+  rescanBtn.className = 'btn btn-ghost';
+  rescanBtn.style.marginTop = '6px';
+  rescanBtn.textContent = 'Scansiona di nuovo';
+  rescanBtn.addEventListener('click', ()=>{
+    state.scannedPayload = null;
+    slot.innerHTML = "";
+    document.getElementById('scanner-status').textContent = "Inquadra il codice a barre o QR della tessera";
+  });
+  slot.appendChild(rescanBtn);
+}
+
+function stopScanner(){
+  if(state.scanRAF) cancelAnimationFrame(state.scanRAF);
+  state.scanRAF = null;
+  if(state.scanStream){
+    state.scanStream.getTracks().forEach(t=>t.stop());
+    state.scanStream = null;
+  }
+  const video = document.getElementById('scanner-video');
+  if(video) video.srcObject = null;
+}
+
+/* ===========================================================
+   DETTAGLIO CARTA — codice enorme generato con bwip-js
+   =========================================================== */
+function openDetail(id){
+  state.activeDetailId = id;
+  goTo('detail');
+  renderDetail();
+}
+
+function renderDetail(){
+  const card = state.cards.find(c => c.id === state.activeDetailId);
+  const body = document.getElementById('detail-body');
+  if(!card){
+    body.innerHTML = `<div class="empty-state"><h3>Carta non trovata</h3></div>`;
+    return;
+  }
+  body.innerHTML = `
+    <div class="detail-hero" style="background:${cardGradientCSS(card)};">
+      <div class="logo-chip">${escapeHTML(card.emoji || '💳')}</div>
+      <div>
+        <h2>${escapeHTML(card.name)}</h2>
+        <p>${escapeHTML(card.store)}</p>
+      </div>
+    </div>
+    <div class="code-panel">
+      <canvas id="code-canvas"></canvas>
+      <div class="code-number">${escapeHTML(card.code)}</div>
+      <div class="code-type-label">${CODE_TYPE_LABEL[card.codeType] || card.codeType}</div>
+    </div>
+  `;
+  renderCodeOnCanvas(card);
+}
+
+function renderCodeOnCanvas(card){
+  const canvas = document.getElementById('code-canvas');
+  const bcid = BWIP_MAP[card.codeType] || 'qrcode';
+  try{
+    const opts = { bcid, text: card.code, includetext:false, backgroundcolor:'ffffff' };
+    if(bcid === 'qrcode'){
+      opts.scale = 6;
+    }else if(bcid === 'datamatrix'){
+      opts.scale = 6;
+    }else if(bcid === 'pdf417'){
+      opts.scale = 3; opts.columns = 6;
+    }else{
+      // barcode 1D lineari: larghi e alti per essere letti facilmente alla cassa
+      opts.scale = 3; opts.height = 16;
+    }
+    bwipjs.toCanvas(canvas, opts);
+  }catch(err){
+    console.error("Errore generazione codice:", err);
+    const ctx = canvas.getContext('2d');
+    canvas.width = 280; canvas.height = 120;
+    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,280,120);
+    ctx.fillStyle = '#c8483a'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText("Codice non valido per questo formato", 140, 55);
+    ctx.fillText("Controlla il valore inserito", 140, 75);
+  }
+}
+
+document.getElementById('detail-menu-btn').addEventListener('click', ()=> openSheet('sheet-detail-menu'));
+
+document.getElementById('menu-edit').addEventListener('click', ()=>{
+  closeSheet('sheet-detail-menu');
+  const card = state.cards.find(c => c.id === state.activeDetailId);
+  if(!card) return;
+  goTo('add');
+  state.editingId = card.id;
+  document.getElementById('add-title').textContent = "Modifica carta";
+  document.getElementById('add-eyebrow').textContent = "Modifica tessera";
+  document.querySelector('#add-segmented button[data-mode="manual"]').click();
+  document.getElementById('f-cardname').value = card.name;
+  document.getElementById('f-storename').value = card.store;
+  document.getElementById('f-codetype').value = card.codeType;
+  document.getElementById('f-code').value = card.code;
+  state.selectedColor = [card.color1, card.color2];
+  state.selectedEmoji = card.emoji || '💳';
+  buildColorGrid();
+  buildEmojiGrid();
+  updateCodeHelp();
+  updateManualPreview();
+});
+
+document.getElementById('menu-delete').addEventListener('click', ()=>{
+  closeSheet('sheet-detail-menu');
+  openSheet('sheet-confirm-delete');
+});
+document.getElementById('confirm-delete-cancel').addEventListener('click', ()=> closeSheet('sheet-confirm-delete'));
+document.getElementById('confirm-delete-ok').addEventListener('click', ()=>{
+  state.cards = state.cards.filter(c => c.id !== state.activeDetailId);
+  saveCards(state.cards);
+  closeSheet('sheet-confirm-delete');
+  showToast("Carta eliminata");
+  goTo('home');
+});
+
+/* ===========================================================
+   SHEET helpers
+   =========================================================== */
+function openSheet(id){
+  document.getElementById('sheet-backdrop').classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+function closeSheet(id){
+  document.getElementById(id).classList.remove('active');
+  const anyOpen = document.querySelectorAll('.sheet.active').length > 0;
+  if(!anyOpen) document.getElementById('sheet-backdrop').classList.remove('active');
+}
+document.getElementById('sheet-backdrop').addEventListener('click', ()=>{
+  document.querySelectorAll('.sheet.active').forEach(s=> s.classList.remove('active'));
+  document.getElementById('sheet-backdrop').classList.remove('active');
+});
+
+/* ===========================================================
+   SETTINGS
+   =========================================================== */
+function renderSettings(){
+  applyTheme();
+}
+document.querySelectorAll('#theme-picker button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    state.settings.theme = btn.dataset.theme;
+    saveSettings(state.settings);
+    applyTheme();
+  });
+});
+
+document.getElementById('btn-export').addEventListener('click', ()=>{
+  try{
+    const dataStr = JSON.stringify(state.cards, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `wallet-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast("Backup esportato");
+  }catch(e){
+    console.error(e);
+    showToast("Errore durante l'esportazione");
+  }
+});
+
+document.getElementById('btn-import').addEventListener('click', ()=>{
+  document.getElementById('import-file').click();
+});
+document.getElementById('import-file').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const imported = JSON.parse(reader.result);
+      if(!Array.isArray(imported)) throw new Error("Formato non valido");
+      const cleaned = imported.filter(c => c && c.name && c.code).map(c => ({
+        id: c.id || uid(),
+        name: String(c.name), store: String(c.store || ""),
+        codeType: BWIP_MAP[c.codeType] ? c.codeType : 'qrcode',
+        code: String(c.code),
+        emoji: c.emoji || '💳',
+        color1: c.color1 || '#2f6fed', color2: c.color2 || '#1d4fb8',
+        order: c.order ?? 0, createdAt: c.createdAt || Date.now()
+      }));
+      state.cards = state.cards.concat(cleaned);
+      saveCards(state.cards);
+      showToast(`Importate ${cleaned.length} carte`);
+      renderHome();
+    }catch(err){
+      console.error(err);
+      showToast("File non valido");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+document.getElementById('btn-delete-all').addEventListener('click', ()=> openSheet('sheet-confirm-wipe'));
+document.getElementById('confirm-wipe-cancel').addEventListener('click', ()=> closeSheet('sheet-confirm-wipe'));
+document.getElementById('confirm-wipe-ok').addEventListener('click', ()=>{
+  state.cards = [];
+  saveCards(state.cards);
+  closeSheet('sheet-confirm-wipe');
+  showToast("Tutte le carte eliminate");
+  renderHome();
+});
+
+/* ===========================================================
+   PWA leggera — manifest generato a runtime (nessun file esterno)
+   e service worker inline via Blob, entrambi con feature-detect
+   così la compatibilità del sito non viene mai compromessa.
+   =========================================================== */
+try{
+  const manifest = {
+    name: "Wallet — Carte Fedeltà",
+    short_name: "Wallet",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#121214",
+    theme_color: "#121214",
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23121214'/%3E%3Crect x='18' y='34' width='64' height='42' rx='8' fill='none' stroke='%23F2B84B' stroke-width='6'/%3E%3Ccircle cx='18' cy='55' r='6' fill='%23F2B84B'/%3E%3C/svg%3E",
+      sizes: "any", type: "image/svg+xml"
+    }]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(manifestBlob);
+  document.head.appendChild(link);
+}catch(e){ console.warn("Manifest PWA non disponibile:", e); }
+
+if('serviceWorker' in navigator){
+  try{
+    const swCode = `
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => self.clients.claim());
+      self.addEventListener('fetch', e => {
+        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+      });
+    `;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(()=>{ /* offline shell non critico */ });
+  }catch(e){ console.warn("Service worker non registrato:", e); }
+}
+
+/* ===========================================================
+   AVVIO
+   =========================================================== */
+applyTheme();
+renderHome();
+
+// ferma la fotocamera se l'utente lascia la pagina (batteria/privacy)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) stopScanner();
+  else if(state.currentScreen === 'add' && state.addMode === 'scan') startScanMode();
+});
+window.addEventListener('pagehide', stopScanner);
+
+})();
+</script>
+</body>
+</html>
