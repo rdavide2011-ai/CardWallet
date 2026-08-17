@@ -17,6 +17,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@4.3.0/dist/bwip-js-min.js"></script>
 <!-- ZXing: decoding LIVE da fotocamera per lo scanner interno all'app (non dipende da BarcodeDetector) -->
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23121214'/%3E%3Crect x='18' y='34' width='64' height='42' rx='8' fill='none' stroke='%23F2B84B' stroke-width='6'/%3E%3Ccircle cx='18' cy='55' r='6' fill='%23F2B84B'/%3E%3C/svg%3E">
 
 <style>
@@ -335,6 +336,33 @@ button{ font-family:inherit; }
 .scanner-fallback{
   background:var(--surface-2); border-radius:16px; padding:16px; font-size:13.5px; color:var(--ink-dim); line-height:1.5;
 }
+.scanner-capture-btn{
+  margin-top:-2px;
+  min-height:52px;
+  box-shadow:var(--shadow-pop);
+}
+.scanner-capture-btn svg{ width:20px; height:20px; }
+.scanner-capture-btn.processing{
+  pointer-events:none;
+  opacity:.72;
+}
+.scanner-capture-canvas{
+  display:none;
+}
+.scan-photo-preview{
+  width:100%;
+  border-radius:18px;
+  background:#000;
+  display:block;
+  margin-top:2px;
+}
+.scan-photo-actions{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+.scan-photo-actions .btn{ flex:1; }
+
 
 /* ---------------- Detail (full screen code) ---------------- */
 .detail-screen{ background:var(--bg); }
@@ -452,7 +480,7 @@ button{ font-family:inherit; }
   animation: fabIconSpin .34s cubic-bezier(.22,1,.36,1);
 }
 
-/* ---------------- Scanner: extra states for the internal live scanner ---------------- */
+/* ---------------- Scanner: foto + riconoscimento interno ---------------- */
 .scanner-loading{
   display:flex; align-items:center; justify-content:center; gap:10px;
   color:var(--ink-dim); font-size:13.5px;
@@ -530,10 +558,18 @@ button{ font-family:inherit; }
       <div id="panel-scan" class="scanner-wrap">
         <div class="scanner-viewport" id="scanner-viewport">
           <video id="scanner-video" playsinline muted autoplay></video>
+          <canvas id="scanner-capture-canvas" class="scanner-capture-canvas"></canvas>
           <div class="scan-frame" id="scan-frame"></div>
           <div class="scan-line" id="scan-line"></div>
         </div>
-        <p class="scanner-status" id="scanner-status">Inquadra il codice a barre dentro la cornice</p>
+        <button class="btn btn-primary scanner-capture-btn" id="scanner-capture-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.3-2h5.4L16 6h1.5A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/>
+            <circle cx="12" cy="12.5" r="3.2"/>
+          </svg>
+          Scatta foto e riconosci
+        </button>
+        <p class="scanner-status" id="scanner-status">Inquadra il codice a barre dentro la cornice, poi scatta una foto</p>
         <div id="scan-result-slot"></div>
         <div id="scanner-fallback-slot"></div>
       </div>
@@ -804,8 +840,9 @@ let state = {
   editingId: null,      // carta in modifica (null = nuova)
   activeDetailId: null,
   addMode: "scan",
-  codeReader: null,     // istanza ZXing.BrowserMultiFormatReader
-  scanControls: null,   // controlli restituiti dalla scansione continua ZXing
+  codeReader: null,     // istanza ZXingBrowser.BrowserMultiFormatReader
+  scanControls: null,   // mantenuto per compatibilità; la modalità foto non fa scansione continua
+  cameraStream: null,   // MediaStream della fotocamera, usato solo durante la foto
   scannedPayload: null,
   selectedColor: null,
   selectedEmoji: "💳"
@@ -1025,6 +1062,7 @@ segButtons.forEach(btn=>{
 });
 
 function resetAddForm(){
+  stopScanner();
   state.editingId = null;
   state.scannedPayload = null;
   state.selectedColor = PRESET_COLORS[Math.floor(Math.random()*PRESET_COLORS.length)];
@@ -1186,76 +1224,76 @@ document.getElementById('manual-form').addEventListener('submit', (e)=>{
 });
 
 /* ===========================================================
-   SCANNER FOTOCAMERA — SCANNER INTERNO ALL'APP
-   Non usa BarcodeDetector. Usa ZXing (@zxing/library) per fare
-   il decoding LIVE del flusso video della fotocamera, frame dopo
-   frame, direttamente nella pagina. Nessun dato (immagini o
-   codici) lascia mai il dispositivo: tutto resta lato client e
-   viene poi salvato solo in localStorage.
+   SCANNER FOTOCAMERA — FOTO + DECODIFICA LOCALE
+   La fotocamera viene usata solo per scattare una foto.
+   La foto viene analizzata localmente con @zxing/browser.
+   Non viene caricata né inviata a server esterni.
    =========================================================== */
 async function startScanMode(){
   if(state.currentScreen !== 'add' || state.addMode !== 'scan') return;
+
   const statusEl = document.getElementById('scanner-status');
   const fallbackSlot = document.getElementById('scanner-fallback-slot');
   const resultSlot = document.getElementById('scan-result-slot');
   const viewport = document.getElementById('scanner-viewport');
   const frame = document.getElementById('scan-frame');
   const line = document.getElementById('scan-line');
+  const captureBtn = document.getElementById('scanner-capture-btn');
+
+  stopScanner();
   resultSlot.innerHTML = "";
   fallbackSlot.innerHTML = "";
   state.scannedPayload = null;
   frame.classList.remove('found');
   line.classList.remove('hidden');
   viewport.style.display = 'block';
+  captureBtn.style.display = 'flex';
+  captureBtn.classList.remove('processing');
 
-  if(typeof ZXing === 'undefined'){
+  if(typeof ZXing === 'undefined' || typeof ZXingBrowser === 'undefined'){
     statusEl.textContent = "";
     viewport.style.display = 'none';
+    captureBtn.style.display = 'none';
     fallbackSlot.innerHTML = `
       <div class="scanner-fallback">
-        Impossibile caricare il modulo di scansione. Usa la scheda <strong>Manuale</strong> per inserire il codice a mano.
+        Impossibile caricare il modulo di riconoscimento. Usa la scheda <strong>Manuale</strong> per inserire il codice.
       </div>`;
     return;
   }
+
   if(!ZXING_FORMAT_MAP) buildZxingMaps();
 
-  statusEl.innerHTML = `<span class="scanner-loading"><span class="scanner-spinner"></span> Richiesta autorizzazione fotocamera…</span>`;
-
-  // ferma un'eventuale sessione precedente prima di avviarne una nuova
-  stopScanner();
+  statusEl.innerHTML = `<span class="scanner-loading"><span class="scanner-spinner"></span> Apertura fotocamera…</span>`;
 
   try{
+    // Il reader viene usato SOLO per decodificare l'immagine catturata.
     const hints = new Map();
     hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, ZXING_HINTED_FORMATS);
     hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-    state.codeReader = new ZXing.BrowserMultiFormatReader(hints, 250);
-  }catch(e){
-    console.error("Errore inizializzazione scanner:", e);
-    statusEl.textContent = "";
-    viewport.style.display = 'none';
-    fallbackSlot.innerHTML = `<div class="scanner-fallback">Impossibile inizializzare lo scanner su questo browser. Usa l'inserimento manuale.</div>`;
-    return;
-  }
+    state.codeReader = new ZXingBrowser.BrowserMultiFormatReader(hints);
 
-  const video = document.getElementById('scanner-video');
-  const constraints = { video: { facingMode: { ideal: "environment" } }, audio: false };
+    const video = document.getElementById('scanner-video');
 
-  try{
-    const controls = await state.codeReader.decodeFromConstraints(constraints, video, (result, err)=>{
-      // "err" qui è quasi sempre un NotFoundException emesso ad ogni frame senza
-      // codice: è normale e va ignorato, si continua a scansionare in silenzio.
-      if(result && !state.scannedPayload){
-        handleScanResult(result);
+    // Accesso diretto alla fotocamera posteriore.
+    state.cameraStream = await navigator.mediaDevices.getUserMedia({
+      audio:false,
+      video:{
+        facingMode:{ ideal:"environment" },
+        width:{ ideal:1920 },
+        height:{ ideal:1080 }
       }
     });
-    state.scanControls = controls;
-    if(!state.scannedPayload){
-      statusEl.textContent = "Inquadra il codice a barre dentro la cornice";
-    }
+
+    video.srcObject = state.cameraStream;
+    await video.play();
+
+    statusEl.textContent = "Inquadra il codice a barre dentro la cornice, poi scatta una foto";
   }catch(err){
     console.error("Errore accesso fotocamera:", err);
     statusEl.textContent = "";
     viewport.style.display = 'none';
+    captureBtn.style.display = 'none';
+
     const name = err && err.name;
     if(name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError'){
       fallbackSlot.innerHTML = `
@@ -1263,22 +1301,132 @@ async function startScanMode(){
           Accesso alla fotocamera negato. Consenti l'accesso alla fotocamera per utilizzare lo scanner.<br><br>
           Puoi comunque aggiungere la carta dalla scheda <strong>Manuale</strong>.
         </div>`;
-    }else if(name === 'NotFoundError' || name === 'OverconstrainedError'){
+    }else if(name === 'NotFoundError'){
       fallbackSlot.innerHTML = `
         <div class="scanner-fallback">
-          Nessuna fotocamera disponibile su questo dispositivo. Usa la scheda <strong>Manuale</strong> per inserire il codice a mano.
+          Nessuna fotocamera disponibile su questo dispositivo. Usa la scheda <strong>Manuale</strong>.
         </div>`;
     }else{
       fallbackSlot.innerHTML = `
         <div class="scanner-fallback">
-          Non è stato possibile accedere alla fotocamera. Puoi comunque aggiungere la carta dalla scheda <strong>Manuale</strong>.
+          Non è stato possibile aprire la fotocamera. Puoi comunque aggiungere la carta dalla scheda <strong>Manuale</strong>.
         </div>`;
     }
   }
 }
 
+function getScannerCrop(video){
+  const vw = video.videoWidth || 1280;
+  const vh = video.videoHeight || 720;
+
+  // Corrisponde approssimativamente alla cornice visibile.
+  // Per i barcode 1D lasciamo un po' di margine verticale per evitare
+  // di tagliare le barre se l'utente non centra perfettamente la tessera.
+  const cropW = Math.floor(vw * 0.76);
+  const cropH = Math.floor(vh * 0.34);
+  const sx = Math.max(0, Math.floor((vw - cropW) / 2));
+  const sy = Math.max(0, Math.floor((vh - cropH) / 2));
+
+  return { sx, sy, cropW, cropH };
+}
+
+function drawCaptureVariant(video, variant){
+  const canvas = document.getElementById('scanner-capture-canvas');
+  const {sx, sy, cropW, cropH} = getScannerCrop(video);
+
+  // Upscaling importante per EAN/UPC piccoli.
+  const scale = 2.5;
+  canvas.width = Math.max(1, Math.floor(cropW * scale));
+  canvas.height = Math.max(1, Math.floor(cropH * scale));
+
+  const ctx = canvas.getContext('2d', { willReadFrequently:true });
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
+
+  if(variant === 'contrast' || variant === 'gray'){
+    const image = ctx.getImageData(0,0,canvas.width,canvas.height);
+    const data = image.data;
+
+    for(let i=0; i<data.length; i+=4){
+      const gray = Math.round(
+        0.299 * data[i] +
+        0.587 * data[i+1] +
+        0.114 * data[i+2]
+      );
+
+      if(variant === 'gray'){
+        data[i] = gray;
+        data[i+1] = gray;
+        data[i+2] = gray;
+      }else{
+        // Contrasto leggermente aumentato per barre nere su fondo chiaro.
+        const c = Math.max(0, Math.min(255, ((gray - 128) * 1.55) + 128));
+        data[i] = c;
+        data[i+1] = c;
+        data[i+2] = c;
+      }
+    }
+    ctx.putImageData(image,0,0);
+  }
+
+  return canvas;
+}
+
+async function decodeCapturedPhoto(){
+  const video = document.getElementById('scanner-video');
+  const statusEl = document.getElementById('scanner-status');
+  const captureBtn = document.getElementById('scanner-capture-btn');
+
+  if(!video.videoWidth || !video.videoHeight || !state.codeReader){
+    showToast("La fotocamera non è ancora pronta");
+    return;
+  }
+
+  captureBtn.classList.add('processing');
+  captureBtn.innerHTML = `
+    <span class="scanner-spinner"></span>
+    Riconoscimento in corso…
+  `;
+  statusEl.innerHTML = `<span class="scanner-loading"><span class="scanner-spinner"></span> Sto leggendo il codice dalla foto…</span>`;
+
+  // Prova più varianti della stessa foto: originale, scala di grigi
+  // e contrasto. Questo aumenta la robustezza sui barcode stampati.
+  const variants = ['normal','gray','contrast'];
+  let result = null;
+
+  try{
+    for(const variant of variants){
+      const canvas = drawCaptureVariant(video, variant);
+
+      try{
+        result = state.codeReader.decodeFromCanvas(canvas);
+        if(result) break;
+      }catch(err){
+        // NotFound/Checksum/Format sono normali durante i tentativi.
+      }
+    }
+  }finally{
+    captureBtn.classList.remove('processing');
+    captureBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.3-2h5.4L16 6h1.5A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/>
+        <circle cx="12" cy="12.5" r="3.2"/>
+      </svg>
+      Scatta foto e riconosci
+    `;
+  }
+
+  if(!result){
+    statusEl.textContent = "Non riesco a leggere il codice. Avvicina la fotocamera, aumenta la luce e riprova.";
+    showToast("Codice non riconosciuto");
+    return;
+  }
+
+  handleScanResult(result);
+}
+
 function handleScanResult(result){
-  if(state.scannedPayload) return; // evita acquisizioni multiple sullo stesso frame
+  if(state.scannedPayload) return;
 
   let zxFormat, rawValue;
   try{
@@ -1287,53 +1435,58 @@ function handleScanResult(result){
   }catch(e){
     return;
   }
+
   if(!rawValue) return;
 
   const internalFormat = (ZXING_FORMAT_MAP && ZXING_FORMAT_MAP[zxFormat]) || 'qrcode';
-  state.scannedPayload = { code: rawValue, codeType: internalFormat };
+  state.scannedPayload = {
+    code: String(rawValue).trim(),
+    codeType: internalFormat
+  };
 
-  // feedback aptico breve, quando disponibile
-  if(navigator.vibrate){ try{ navigator.vibrate(80); }catch(e){} }
+  if(navigator.vibrate){
+    try{ navigator.vibrate([60,40,60]); }catch(e){}
+  }
 
-  // feedback visivo di conferma sulla cornice di scansione, poi ferma
-  // davvero la scansione (rilascia la fotocamera) e apre la schermata
-  // di conferma del codice.
   const frame = document.getElementById('scan-frame');
   const line = document.getElementById('scan-line');
   frame.classList.add('found');
   line.classList.add('hidden');
-  document.getElementById('scanner-status').textContent = "Codice rilevato";
+  document.getElementById('scanner-status').textContent = "Codice riconosciuto ✓";
 
   setTimeout(()=>{
     stopScanner();
     openScanConfirmSheet();
-  }, 320);
+  }, 260);
 }
 
 function stopScanner(){
   if(state.scanControls){
-    try{ state.scanControls.stop(); }catch(e){ /* nessuna sessione attiva */ }
+    try{ state.scanControls.stop(); }catch(e){}
     state.scanControls = null;
   }
+
   if(state.codeReader){
-    try{ state.codeReader.reset(); }catch(e){ /* già rilasciato */ }
+    try{ state.codeReader.reset(); }catch(e){}
     state.codeReader = null;
   }
-  const video = document.getElementById('scanner-video');
-  if(video && video.srcObject){
+
+  if(state.cameraStream){
     try{
-      video.srcObject.getTracks().forEach(t=> t.stop());
+      state.cameraStream.getTracks().forEach(track => track.stop());
     }catch(e){}
+    state.cameraStream = null;
+  }
+
+  const video = document.getElementById('scanner-video');
+  if(video){
+    try{ video.pause(); }catch(e){}
     video.srcObject = null;
   }
 }
 
 /* ===========================================================
    SCHERMATA DI CONFERMA DEL CODICE SCANSIONATO
-   Mostrata subito dopo che lo scanner ha realmente decodificato
-   un barcode dal flusso video. Permette di confermare il numero
-   letto oppure correggerlo manualmente prima di procedere alla
-   creazione della carta.
    =========================================================== */
 function openScanConfirmSheet(){
   if(!state.scannedPayload) return;
@@ -1344,7 +1497,8 @@ function openScanConfirmSheet(){
 function showScanConfirmDisplay(){
   const payload = state.scannedPayload;
   if(!payload) return;
-  document.getElementById('scan-confirm-type-pill').textContent = CODE_TYPE_LABEL[payload.codeType] || payload.codeType;
+  document.getElementById('scan-confirm-type-pill').textContent =
+    CODE_TYPE_LABEL[payload.codeType] || payload.codeType;
   document.getElementById('scan-confirm-code-value').textContent = payload.code;
   document.getElementById('scan-confirm-display').style.display = 'block';
   document.getElementById('scan-confirm-edit').style.display = 'none';
@@ -1376,9 +1530,6 @@ document.getElementById('scan-confirm-ok-btn').addEventListener('click', ()=>{
   const payload = state.scannedPayload;
   if(!payload) return;
   closeSheet('sheet-scan-confirm');
-  // trasferisce automaticamente il codice riconosciuto nella procedura
-  // di creazione carta: passa alla scheda Manuale con i campi
-  // già compilati e il tipo di codice selezionato correttamente.
   document.querySelector('#add-segmented button[data-mode="manual"]').click();
   document.getElementById('f-codetype').value = payload.codeType;
   document.getElementById('f-code').value = payload.code;
@@ -1388,13 +1539,13 @@ document.getElementById('scan-confirm-ok-btn').addEventListener('click', ()=>{
   setTimeout(()=> document.getElementById('f-cardname').focus(), 150);
 });
 
-/* Se l'utente chiude la schermata di conferma toccando lo sfondo,
-   senza confermare né modificare, la fotocamera riparte per
-   permettere una nuova scansione. */
+document.getElementById('scanner-capture-btn').addEventListener('click', decodeCapturedPhoto);
+
 function handleScanConfirmDismiss(){
   if(state.currentScreen === 'add' && state.addMode === 'scan'){
     document.getElementById('scan-result-slot').innerHTML = "";
-    document.getElementById('scanner-status').textContent = "Inquadra il codice a barre dentro la cornice";
+    document.getElementById('scanner-status').textContent =
+      "Inquadra il codice a barre dentro la cornice, poi scatta una foto";
     startScanMode();
   }
 }
